@@ -31,12 +31,14 @@ class Node:
             return 'S'
         if self.W.id == id:
             return 'W'
-        raise Exception("Route impossible") # Cannot make the required connection
+        raise Exception("Cannot reach node " + str(id)) # Cannot make the required connection
 
     # Calc switch config for a given in/out direction
     def route(self,src,dest):
         src_dir = self.getDir(src)
         dest_dir = self.getDir(dest)
+        if ((src_dir,dest_dir) in self.config) or ((src_dir,dest_dir) in self.config):
+            raise Exception("Route conflict")
         self.config.append((src_dir,dest_dir))
 
     def printConfig(self):
@@ -49,7 +51,7 @@ class Node:
         return str(self.id)
 
     def __repr__(self):
-        return str(self.id)
+        return self.id
 
 class Terminal:
     def __init__(self,id):
@@ -80,8 +82,10 @@ class Switchbox:
     def __init__(self,width):
         self.nodes = []
         self.terminals = []
+        self.edges = []
         self.demands = []
         self.used = []
+        self.routes = []
         self.width = width
         # Create nodes and append to self.nodes list
         for i in range(0,self.width):
@@ -133,7 +137,7 @@ class Switchbox:
                     self.nodes[col][row].connectN(self.nodes[col][row+1])
                     self.nodes[col][row].connectS(self.nodes[col][row-1])
 
-       
+        
     def getWidth(self):
         return self.width
 
@@ -156,7 +160,7 @@ class Switchbox:
                 node = self.nodes[col][row]
                 print("Node: " + str(node) + "  ",end='')
                 print("Connected to " + str(node.N) + str(node.E) + str(node.S) + str(node.W),end='')
-                print("Config: " + node.printConfig())
+                print(" - Config: " + node.printConfig())
             print("")
        
     def getNode(self,id):
@@ -170,6 +174,7 @@ class Switchbox:
 
     def addRoute(self,route):
         # Takes a route between two terminals, works out node config, adds this to the Sb and removes used edges
+        self.routes.append(route)
         src = route[0]
         dest = route[-1]
         assert (src[0] == 'N') or (src[0] == 'E') or (src[0] == 'S') or (src[0] == 'W'), "Route does not start at a terminal"

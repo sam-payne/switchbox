@@ -8,8 +8,10 @@ def drawSB(sb):
     terminal_len = 20
     font_size = 6
     win = GraphWin("Switchbox",window,window)
+    win.setBackground('white')
     nodes = []
     edges = []
+    colours = ['red','blue','green','greenyellow','indigo']
 
     # Calculate location of each node to fit nicely in window
     for i in range(0,width):
@@ -24,7 +26,7 @@ def drawSB(sb):
                 (x,y) = n
                 nodes[x*width + y].setFill("red")
 
-    
+    # Draw all edges
     for i in range(0,width):
         for j in range(0,width):
             # Draw 'East' edge for each node (apart from nodes on RHS)
@@ -37,6 +39,7 @@ def drawSB(sb):
                 l = Line(nodes[i*width + j].getCenter(),nodes[i*width + (j+1)].getCenter())    
                 l.draw(win)
 
+    # Add terminal edges and text labels
     for col in range(0,width):
         for row in range(0,width):
             if col == 0:
@@ -68,9 +71,24 @@ def drawSB(sb):
                 t.setSize(font_size)
                 t.draw(win)
     
+    # Plot routes
+    col_index = 0
+    for route in sb.routes:
+        col_index = col_index+1
+        if col_index == len(colours):
+            col_index = 0
+        for i in range(0,len(route)-3):
+                
+                x,y = sb.getNode(route[i+1]).id
+                src = nodes[int(x)*width + int(y)].getCenter()
+                x,y = sb.getNode(route[int(i)+2]).id
+                dest = nodes[int(x)*width + int(y)].getCenter()
+                l = Line(src,dest)
+                l.setFill(colours[col_index])
+                l.draw(win)
+
+
     input("Enter to close")
 
 
-sb = Switchbox(4)
-drawSB(sb)
 
