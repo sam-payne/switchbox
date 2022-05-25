@@ -1,3 +1,5 @@
+from utils import *
+
 class Node:
     def __init__(self,id):
         self.id = id
@@ -6,6 +8,7 @@ class Node:
         self.S = None
         self.W = None
         self.config = []
+        self.routedNodes = [(None,None)]
     
     def connectN(self,node):
         self.N = node
@@ -34,11 +37,19 @@ class Node:
         raise Exception("Cannot reach node " + str(id)) # Cannot make the required connection
 
     # Calc switch config for a given in/out direction
-    def route(self,src,dest):
+    def route(self,src,dest,routeid):
+        for route in self.routedNodes:
+            print("RouteID = " + str(routeid) + " and route[1] = " + str(route[1]))
+            # If either src or dest of the route IDs match - part of the same mesh so OK to share an edge
+            if route[0] == src and not compareRouteID(route[1],routeid):
+                raise Exception("Route conflict between {Route:" + str(routeid) + "} and {Route" + str(route[1]))
+            if route[0] == dest and not compareRouteID(route[1],routeid):
+                raise Exception("Route conflict between {  Route:" + str(routeid) + "  } and {  Route" + str(route[1]) + "  }")
         src_dir = self.getDir(src)
         dest_dir = self.getDir(dest)
-        if ((src_dir,dest_dir) in self.config) or ((src_dir,dest_dir) in self.config):
-            raise Exception("Route conflict")
+        
+        self.routedNodes.append((src,routeid))
+        self.routedNodes.append((dest,routeid))
         self.config.append((src_dir,dest_dir))
 
     def printConfig(self):
@@ -175,11 +186,12 @@ class Switchbox:
     def addRoute(self,route):
         # Takes a route between two terminals, works out node config, adds this to the Sb and removes used edges
         self.routes.append(route)
+        routeid = (route[0],route[-1])
         src = route[0]
         dest = route[-1]
         assert (src[0] == 'N') or (src[0] == 'E') or (src[0] == 'S') or (src[0] == 'W'), "Route does not start at a terminal"
         assert (dest[0] == 'N') or (dest[0] == 'E') or (dest[0] == 'S') or (dest[0] == 'W'), "Route does not finish at a terminal"
         for i in range(0,len(route)-2):
             curr = self.getNode(route[i+1])
-            curr.route(self.getNode(route[i]).id,self.getNode(route[i+2]).id)
+            curr.route(self.getNode(route[i]).id,self.getNode(route[i+2]).id,routeid)
 
