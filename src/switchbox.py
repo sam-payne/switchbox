@@ -1,4 +1,3 @@
-
 class Node:
     def __init__(self,coord):
         self.coord = coord
@@ -22,6 +21,9 @@ class Node:
     def __str__(self):
         return str(self.coord)
 
+    def __repr__(self):
+        return str(self.coord)
+
 class Terminal:
     def __init__(self,id):
         self.id = id
@@ -31,6 +33,7 @@ class Terminal:
     # Connect up terminal to node (and node to terminal)
     def connect(self,node):
         self.node = node
+        print("Connected " + str(self) + " to " + str(node))
         if self.side == 'N':
             node.connectN(self)
         elif self.side == 'E':
@@ -43,6 +46,9 @@ class Terminal:
     def __str__(self):
         return str(self.id[0])+str(self.id[1])
 
+    def __repr__(self):
+        return str(self.id[0])+str(self.id[1])
+
 class Switchbox:
     def __init__(self,width):
         self.nodes = []
@@ -51,14 +57,15 @@ class Switchbox:
         self.used = []
         self.width = width
         # Create nodes and append to self.nodes list
-        for j in range(0,self.width):
-            new_row = []
-            for i in range(0,self.width):
+        for i in range(0,self.width):
+            new_col = []
+            for j in range(0,self.width):
                 newNode = Node((i,j))
-                new_row.append(newNode)
-            self.nodes.append(new_row)        
-       
-       # Create terminals - give them string names (ie "N3") and connect them to the appropriate edge node
+                new_col.append(newNode)
+            self.nodes.append(new_col)        
+        
+
+       # Create terminals - give them an ID tuple and connect them to the appropriate edge node
         for x in range(0,self.width):
             id = ('N',x)
             t = Terminal(id)
@@ -81,23 +88,23 @@ class Switchbox:
             self.terminals.append(t)
 
         # Connect up nodes to each other    
-        for row in range(0,width):
-            for col in range(0,width):
+        for col in range(0,width):
+            for row in range(0,width):
                 if col == 0:
-                    self.nodes[row][col].connectE(self.nodes[row][col+1])
+                    self.nodes[col][row].connectE(self.nodes[col+1][row])
                 elif col == width-1:
-                    self.nodes[row][col].connectW(self.nodes[row][col-1])
+                    self.nodes[col][row].connectW(self.nodes[col-1][row])
                 else:
-                    self.nodes[row][col].connectE(self.nodes[row][col+1])
-                    self.nodes[row][col].connectW(self.nodes[row][col-1])
+                    self.nodes[col][row].connectE(self.nodes[col+1][row])
+                    self.nodes[col][row].connectW(self.nodes[col-1][row])
 
                 if row == 0:
-                    self.nodes[row][col].connectS(self.nodes[row+1][col])
+                    self.nodes[col][row].connectS(self.nodes[col][row+1])
                 elif row == width-1:
-                    self.nodes[row][col].connectN(self.nodes[row-1][col])
+                    self.nodes[col][row].connectN(self.nodes[col][row-1])
                 else:
-                    self.nodes[row][col].connectN(self.nodes[row-1][col])
-                    self.nodes[row][col].connectS(self.nodes[row+1][col])
+                    self.nodes[col][row].connectN(self.nodes[col][row+1])
+                    self.nodes[col][row].connectS(self.nodes[col][row-1])
 
        
     def getWidth(self):
@@ -106,10 +113,9 @@ class Switchbox:
     def setDemands(self,demands):
         for demand in demands:
             for node in demand:
-                (x,y) = node
-                assert ((x==self.width-1) or (x==0)), "X-coordinate not on edge" 
-                assert ((y==self.width-1) or (y==0)), "Y-coordinate not on edge" 
-                
+                (side,val) = node
+                assert (side=='N') or (side=='W') or (side=='S') or (side=='E'), "Invalid demand for node " + str(node) 
+                assert (val>-1) and (val<self.width), "Invalid demand for node " + str(node)       
         self.demands = demands
 
     def printDemands(self):
@@ -117,12 +123,12 @@ class Switchbox:
         for demand in self.demands:
             print(str(demand[0]) + " <--> " + str(demand[1]))
 
-    def printGrid(self):
-        for row in range(0,self.width):
-            for col in range(0,self.width):
-                node = self.nodes[row][col]
+    def printConnections(self):
+        for col in range(0,self.width):
+            for row in range(0,self.width):
+                node = self.nodes[col][row]
                 print("Node: " + str(node) + "  ",end='')
-                print("Connected to " + str(node.N) + str(node.E) + str(node.S) + str(node.W) + " ",end='')
+                print("Connected to " + str(node.N) + str(node.E) + str(node.S) + str(node.W))
             print("")
        
     def getTerminal(self,id):
