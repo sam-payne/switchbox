@@ -1,10 +1,11 @@
 class Node:
-    def __init__(self,coord):
-        self.coord = coord
+    def __init__(self,id):
+        self.id = id
         self.N = None
         self.E = None
         self.S = None
         self.W = None
+        self.config = []
     
     def connectN(self,node):
         self.N = node
@@ -18,11 +19,37 @@ class Node:
     def connectW(self,node):
         self.W = node
 
+    # Return relative direction of a neighbour node
+    def getDir(self,id):
+        print(id)
+        print(self.N.id)
+        if self.N.id == id:
+            return 'N'
+        if self.E.id == id:
+            return 'E'
+        if self.S.id == id:
+            return 'S'
+        if self.W.id == id:
+            return 'W'
+        raise Exception("Route impossible") # Cannot make the required connection
+
+    # Calc switch config for a given in/out direction
+    def route(self,src,dest):
+        src_dir = self.getDir(src)
+        dest_dir = self.getDir(dest)
+        self.config.append((src_dir,dest_dir))
+
+    def printConfig(self):
+        if len(self.config) == 0:
+            return "Unconnected"
+        else:
+            return str(self.config)
+
     def __str__(self):
-        return str(self.coord)
+        return str(self.id)
 
     def __repr__(self):
-        return str(self.coord)
+        return str(self.id)
 
 class Terminal:
     def __init__(self,id):
@@ -128,11 +155,26 @@ class Switchbox:
             for row in range(0,self.width):
                 node = self.nodes[col][row]
                 print("Node: " + str(node) + "  ",end='')
-                print("Connected to " + str(node.N) + str(node.E) + str(node.S) + str(node.W))
+                print("Connected to " + str(node.N) + str(node.E) + str(node.S) + str(node.W),end='')
+                print("Config: " + node.printConfig())
             print("")
        
-    def getTerminal(self,id):
+    def getNode(self,id):
         for t in self.terminals:
             if t.id == id:
                 return t
+        for col in self.nodes:
+            for n in col:
+                if n.id == id:
+                    return n
+
+    def addRoute(self,route):
+        # Takes a route between two terminals, works out node config, adds this to the Sb and removes used edges
+        src = route[0]
+        dest = route[-1]
+        assert (src[0] == 'N') or (src[0] == 'E') or (src[0] == 'S') or (src[0] == 'W'), "Route does not start at a terminal"
+        assert (dest[0] == 'N') or (dest[0] == 'E') or (dest[0] == 'S') or (dest[0] == 'W'), "Route does not finish at a terminal"
+        for i in range(0,len(route)-2):
+            curr = self.getNode(route[i+1])
+            curr.route(self.getNode(route[i]).id,self.getNode(route[i+2]).id)
 
