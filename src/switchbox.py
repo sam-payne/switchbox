@@ -22,10 +22,12 @@ class Node:
     def connectW(self,node):
         self.W = node
 
+    def getID(self):
+        return self.id
+
     # Return relative direction of a neighbour node
     def getDir(self,id):
-        print(id)
-        print(self.N.id)
+        
         if self.N.id == id:
             return 'N'
         if self.E.id == id:
@@ -39,8 +41,8 @@ class Node:
     # Calc switch config for a given in/out direction
     def route(self,src,dest,routeid):
         for route in self.routedNodes:
-            print("RouteID = " + str(routeid) + " and route[1] = " + str(route[1]))
-            # If either src or dest of the route IDs match - part of the same mesh so OK to share an edge
+            
+            #If either src or dest of the route IDs match - part of the same mesh so OK to share an edge
             if route[0] == src and not compareRouteID(route[1],routeid):
                 raise Exception("Route conflict between {Route:" + str(routeid) + "} and {Route" + str(route[1]))
             if route[0] == dest and not compareRouteID(route[1],routeid):
@@ -73,7 +75,7 @@ class Terminal:
     # Connect up terminal to node (and node to terminal)
     def connect(self,node):
         self.node = node
-        print("Connected " + str(self) + " to " + str(node))
+        # print("Connected " + str(self) + " to " + str(node))
         if self.side == 'N':
             node.connectN(self)
         elif self.side == 'E':
@@ -83,6 +85,9 @@ class Terminal:
         elif self.side == 'W':
             node.connectW(self)
 
+    def getID(self):
+        return self.id
+
     def __str__(self):
         return str(self.id[0])+str(self.id[1])
 
@@ -90,7 +95,7 @@ class Terminal:
         return str(self.id[0])+str(self.id[1])
 
 class Switchbox:
-    def __init__(self,width):
+    def __init__(self,width,demands):
         self.nodes = []
         self.terminals = []
         self.edges = []
@@ -98,6 +103,10 @@ class Switchbox:
         self.used = []
         self.routes = []
         self.width = width
+
+        # Check demands and set
+        self.setDemands(demands)
+
         # Create nodes and append to self.nodes list
         for i in range(0,self.width):
             new_col = []
@@ -175,23 +184,28 @@ class Switchbox:
             print("")
        
     def getNode(self,id):
+        # If ID is a terminal, then get adjacent node
         for t in self.terminals:
-            if t.id == id:
-                return t
+            if t.getID() == id:
+                return t.node
         for col in self.nodes:
             for n in col:
-                if n.id == id:
+                if n.getID() == id:
                     return n
 
-    def addRoute(self,route):
+    def addRoutes(self,routes):
         # Takes a route between two terminals, works out node config, adds this to the Sb and removes used edges
-        self.routes.append(route)
-        routeid = (route[0],route[-1])
-        src = route[0]
-        dest = route[-1]
-        assert (src[0] == 'N') or (src[0] == 'E') or (src[0] == 'S') or (src[0] == 'W'), "Route does not start at a terminal"
-        assert (dest[0] == 'N') or (dest[0] == 'E') or (dest[0] == 'S') or (dest[0] == 'W'), "Route does not finish at a terminal"
-        for i in range(0,len(route)-2):
-            curr = self.getNode(route[i+1])
-            curr.route(self.getNode(route[i]).id,self.getNode(route[i+2]).id,routeid)
+        for route in routes:
+            self.routes.append(route)
+            routeid = (route[0],route[-1])
+            src = route[0]
+            dest = route[-1]
+            print(route)
+            assert (src[0] == 'N') or (src[0] == 'E') or (src[0] == 'S') or (src[0] == 'W'), "Route does not start at a terminal"
+            assert (dest[0] == 'N') or (dest[0] == 'E') or (dest[0] == 'S') or (dest[0] == 'W'), "Route does not finish at a terminal"
+            for i in range(0,len(route)-2):
+                curr = self.getNode(route[i+1])
+                print("curr = " + str(curr.getID()))
+                # print("curr[0" + str(self.getNode(route[i]).getID()))
+                curr.route(route[i],route[i+2],routeid)
 
