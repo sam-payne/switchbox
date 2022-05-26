@@ -21,10 +21,14 @@ def drawSB(sb):
             nodes.append(n)
     
     # Fill in source/sink nodes to be red
+    col_index = 0
     for demand in sb.demands:
-            for n in demand:
-                (x,y) = n
-                nodes[x*width + y].setFill("red")
+        col_index = col_index+1
+        if col_index == len(colours):
+            col_index = 0
+        for n in demand:
+            (x,y) = sb.getNode(n).getID()
+            nodes[x*width + y].setFill(colours[col_index])
 
     # Draw all edges
     for i in range(0,width):
@@ -79,16 +83,16 @@ def drawSB(sb):
             col_index = 0
         for i in range(0,len(route)-3):
                 
-                x,y = sb.getNode(route[i+1]).id
+                x,y = sb.getNode(route[i+1]).getID()
                 src = nodes[int(x)*width + int(y)].getCenter()
-                x,y = sb.getNode(route[int(i)+2]).id
+                x,y = sb.getNode(route[int(i)+2]).getID()
                 dest = nodes[int(x)*width + int(y)].getCenter()
                 l = Line(src,dest)
                 l.setFill(colours[col_index])
                 l.draw(win)
 
-
-    input("Enter to close")
+    win.getMouse()
+    win.close()
 
 
 
