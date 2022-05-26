@@ -193,19 +193,46 @@ class Switchbox:
                 if n.getID() == id:
                     return n
 
-    def addRoutes(self,routes):
+    def addRoute(self,route):
         # Takes a route between two terminals, works out node config, adds this to the Sb and removes used edges
+        
+        self.routes.append(route)
+        routeid = (route[0],route[-1])
+        src = route[0]
+        dest = route[-1]
+        assert (src[0] == 'N') or (src[0] == 'E') or (src[0] == 'S') or (src[0] == 'W'), "Route does not start at a terminal"
+        assert (dest[0] == 'N') or (dest[0] == 'E') or (dest[0] == 'S') or (dest[0] == 'W'), "Route does not finish at a terminal"
+        for i in range(0,len(route)-2):
+            curr = self.getNode(route[i+1])
+            curr.route(route[i],route[i+2],routeid)
+
+    def checkRoute(self,route):
+        routeid = (route[0],route[-1])
+        src = route[0]
+        dest = route[-1]
+        assert (src[0] == 'N') or (src[0] == 'E') or (src[0] == 'S') or (src[0] == 'W'), "Route does not start at a terminal"
+        assert (dest[0] == 'N') or (dest[0] == 'E') or (dest[0] == 'S') or (dest[0] == 'W'), "Route does not finish at a terminal"
+        
+        for i in range(0,len(route)-2):
+            curr = self.getNode(route[i+1])
+            try: 
+                curr.route(route[i],route[i+2],routeid)
+            except:
+                return False
+        return True
+
+    def checkRoutes(self,routes):
         for route in routes:
-            self.routes.append(route)
             routeid = (route[0],route[-1])
             src = route[0]
             dest = route[-1]
-            print(route)
             assert (src[0] == 'N') or (src[0] == 'E') or (src[0] == 'S') or (src[0] == 'W'), "Route does not start at a terminal"
             assert (dest[0] == 'N') or (dest[0] == 'E') or (dest[0] == 'S') or (dest[0] == 'W'), "Route does not finish at a terminal"
+            
             for i in range(0,len(route)-2):
                 curr = self.getNode(route[i+1])
-                print("curr = " + str(curr.getID()))
-                # print("curr[0" + str(self.getNode(route[i]).getID()))
-                curr.route(route[i],route[i+2],routeid)
-
+                try: 
+                    curr.route(route[i],route[i+2],routeid)
+                except:
+                    return False
+        return True
