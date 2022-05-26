@@ -21,3 +21,14 @@ def compareRouteID(id1,id2):
         return True
     else:
         return False
+
+def parseDemands(input_file):
+    demands = []
+    with open(input_file,"r") as demand_file:
+        for line in demand_file:
+            line = line.split(',')
+            src = line[0]
+            dest = line[1]
+            demand = ((src[0],int(src[1])),(dest[0],int(dest[1])))
+            demands.append(demand)
+    return demands
