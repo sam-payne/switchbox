@@ -14,13 +14,19 @@ def manhat(a,b):
         diffy = by - ay
     return diffx + diffy
 
-def compareRouteID(id1,id2):
+def matchingRouteID(id1,id2):
     if id1[0] == id2[0] or id1[0] == id2[1]:
         return True
     elif id1[1] == id2[0] or id1[1] == id2[1]:
         return True
     else:
         return False
+
+def compareID(id1,id2):
+    if id1[0] == id2[0]:
+        if id1[1] == id2[1]:
+            return True
+    return False
 
 def parseDemands(input_file):
     demands = []
