@@ -29,8 +29,9 @@ def drawSB(sb):
             p1 = nodes[i*width + j].getCenter()
             i,j = edge.node2.getX(),edge.node2.getY()
             p2 = nodes[i*width + j].getCenter()
-            l = Line(p1,p2)    
-            edges.append((edge.getID(),l))
+            l = Line(p1,p2)
+            l.setFill("gray")    
+            edges.append(l)
             l.draw(win)
             
     # Add terminal edges and text labels
@@ -64,6 +65,13 @@ def drawSB(sb):
                 t = Text(Point(x,y+1.5*terminal_len),"S"+str(col))
                 t.setSize(font_size)
                 t.draw(win)
+
+    for i,edge in enumerate(sb.edges):
+        if not edge.node1.isTerminal and not edge.node2.isTerminal:
+            if edge.getNetName() != None:
+                for j,routeid in enumerate(sb.routeids):
+                    if edge.getNetName() == routeid:
+                        edges[i].setFill(colours[j%len(colours)])
 
     win.getMouse()
     win.close()

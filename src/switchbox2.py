@@ -3,13 +3,20 @@ from utils import *
 class Node:
     def __init__(self,id,isTerminal):
         self.id = id
-        self.N = None
-        self.E = None
-        self.S = None
-        self.W = None
+        self.N_edge = None
+        self.E_edge = None
+        self.S_edge = None
+        self.W_edge = None
+        self.N_node = None
+        self.E_node = None
+        self.S_node = None
+        self.W_node = None
         self.isTerminal = isTerminal
         self.config = []
         self.routedNodes = [(None,None)]
+
+    def __str__(self):
+        return str(self.id)
 
     def getX(self):
         return int(self.id[0])    
@@ -23,25 +30,37 @@ class Node:
         else:
             return str(self.config)
 
+    def checkTurn(self,dest,routeid):
+        dir = self.getDir(dest.getID())
+        edge = self.getEdge(dir)
+        # if no current net exists on the edge, valid turn
+        if edge.netName == None:
+            return True
+        # otherwise, valid turn if nets are the same
+        if matchingRouteID(edge.netName,routeid):
+            return True
+        else:
+            return False
+            
 
     def route(self,src_node,dest_node,routeid):
         # Determine which outgoing edge is required
-        if self.N != None:
-            if self.N.getOtherNode(self).getID() == dest_node:
-                edge = self.N
-        if self.E != None:
-            if self.E.getOtherNode(self).getID() == dest_node:
-                edge = self.E
-        if self.S != None:
-            if self.S.getOtherNode(self).getID() == dest_node:
-                edge = self.S
-        if self.W != None:
-            if self.W.getOtherNode(self).getID() == dest_node:
-                edge = self.W
+        if self.N_node != None:
+            if compareID(self.N_node.getID(),dest_node):
+                edge = self.N_edge
+        if self.E_node != None:
+            if compareID(self.E_node.getID(),dest_node):
+                edge = self.E_edge
+        if self.S_node != None:
+            if compareID(self.S_node.getID(),dest_node):
+                edge = self.S_edge
+        if self.W_node != None:
+            if compareID(self.W_node.getID(),dest_node):
+                edge = self.W_edge
         
         if edge.netName == None:
             edge.netName = routeid
-        elif edge.netName != routeid:
+        elif not matchingRouteID(edge.netName,routeid):
             raise Exception("Route conflict")
         
         src_dir = self.getDir(src_node)
@@ -50,56 +69,69 @@ class Node:
         
     def getDir(self,id):
         
-        if self.N.getOtherNode(self).getID() == id:
+        if compareID(self.N_node.getID(),id):
             return 'N'
-        if self.E.getOtherNode(self).getID() == id:
+        if compareID(self.E_node.getID(),id):
             return 'E'
-        if self.S.getOtherNode(self).getID() == id:
+        if compareID(self.S_node.getID(),id):
             return 'S'
-        if self.W.getOtherNode(self).getID() == id:
+        if compareID(self.W_node.getID(),id):
             return 'W'
+        raise Exception("Not found direction")
 
     def getID(self):
         return self.id
     
     def getEdge(self,dir):
         if dir=='N':
-            return self.N
+            return self.N_edge
         elif dir=='E':
-            return self.E
+            return self.E_edge
         elif dir=='S':
-            return self.S
+            return self.S_edge
         elif dir=='W':
-            return self.W
+            return self.W_edge
         else:
             raise Exception("Invalid dirs")
 
     def addEdge(self,edge,dir):
         if dir=='N':
             edge.connectNode(self)
-            self.N = edge
+            self.N_edge = edge
         elif dir=='E':
             edge.connectNode(self)
-            self.E = edge
+            self.E_edge = edge
         elif dir=='S':
             edge.connectNode(self)
-            self.S = edge
+            self.S_edge = edge
         elif dir=='W':
             edge.connectNode(self)
-            self.W = edge
+            self.W_edge = edge
+        else:
+            raise Exception("Invalid dirs")
+
+    def addNode(self,node,dir):
+        if dir=='N':
+            self.N_node = node
+        elif dir=='E':
+            self.E_node = node
+        elif dir=='S':
+            self.S_node = node
+        elif dir=='W':
+            self.W_node = node
         else:
             raise Exception("Invalid dirs")
 
     def getNodeFromTerminal(self):
         # If terminal, then get attached node
-        if self.N != None:
-            return self.N.getOtherNode(self)
-        elif self.E != None:
-            return self.E.getOtherNode(self)
-        elif self.S != None:
-            return self.S.getOtherNode(self)
-        elif self.W != None:
-            return self.W.getOtherNode(self)
+        if self.N_node != None:
+            return self.N_node
+        elif self.E_node != None:
+            return self.E_node
+        elif self.S_node != None:
+            return self.S_node
+        elif self.W_node != None:
+            return self.W_node
         else:
             raise Exception("No node attached to terminal")  
 
@@ -112,6 +144,9 @@ class Edge:
 
     def getID(self):
         return self.id
+
+    def getNetName(self):
+        return self.netName
 
     def connectNode(self,node):
         if self.node1 == None:
@@ -137,10 +172,12 @@ class Switchbox:
         self.demands = []
         self.used = []
         self.routes = []
+        self.routeids = []
         self.width = width
 
         # Check demands and set
-        self.setDemands(demands)
+        if demands != None:
+            self.setDemands(demands)
         
          # Create nodes and append to self.nodes list
         for i in range(0,self.width):
@@ -170,6 +207,7 @@ class Switchbox:
                     self.connectTwoNodes(self.nodes[col][row-1],'S',self.nodes[col][row],'N')
 
 
+
         # Create terminals - give them an ID tuple and connect them to the appropriate node via an edge
         for x in range(0,self.width):
             id = ('N',x)
@@ -194,6 +232,14 @@ class Switchbox:
   
 
     def connectTwoNodes(self,node1,node1_dir,node2,node2_dir):
+        
+        # Add each other on their list of nodes
+        node1.addNode(node2,node1_dir)
+        node2.addNode(node1,node2_dir)
+
+        # Now create and add the edges
+
+        # Form edge ID
         if (node1_dir == 'E') or (node1_dir == 'S'):
             edgeid = str(node1.getID()) + "-" + node1_dir
         elif (node2_dir == 'E') or (node2_dir == 'S'):
@@ -215,6 +261,8 @@ class Switchbox:
                 # No edge exists so create one
                 edge = node1.getEdge(node1_dir)
                 node2.addEdge(edge,node2_dir)
+
+        
             
     def setDemands(self,demands):
         for demand in demands:
@@ -234,7 +282,7 @@ class Switchbox:
             for row in range(0,self.width):
                 node = self.nodes[col][row]
                 print("Node: " + str(node) + "  ",end='')
-                print("Connected to " + str(node.N.getOtherNode().getID()) + str(node.E.getOtherNode().getID()) + str(node.S.getOtherNode().getID()) + str(node.W.getOtherNode().getID()),end='')
+                print("Connected to " + str(node.N_node) + str(node.E_node) + str(node.S_node) + str(node.W_node),end='')
                 print(" - Config: " + node.printConfig())
             print("")
 
@@ -272,6 +320,7 @@ class Switchbox:
         
         self.routes.append(route)
         routeid = (route[0],route[-1])
+        self.routeids.append(routeid)
         src = route[0]
         dest = route[-1]
 
@@ -295,3 +344,15 @@ class Switchbox:
             except:
                 return False
         return True
+
+    def checkTurn(self,src,dest,routeid):
+        src = self.getNode(src)
+        dest = self.getNode(dest)
+        if src.checkTurn(dest,routeid):
+            return True
+        else:
+            return False
+
+
+# sb = Switchbox(4,None)
+# sb.checkRoute([('N',0),(0,0),(1,0),('N',1)])
