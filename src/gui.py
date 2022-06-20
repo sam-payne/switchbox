@@ -1,5 +1,10 @@
+from turtle import end_fill
 from graphics import *
 from switchbox import Switchbox
+nodes = []
+edges = []
+labels = []
+colours = ['red','blue','green','greenyellow','indigo']
 
 def drawSB(sb):
     width = sb.width    
@@ -8,10 +13,8 @@ def drawSB(sb):
     terminal_len = 20
     font_size = 6
     win = GraphWin("Switchbox",window,window)
-    win.setBackground('white')
-    nodes = []
-    edges = []
-    colours = ['red','blue','green','greenyellow','indigo']
+    win.setBackground('white')   
+    
 
     # Calculate location of each node to fit nicely in window
     for i in range(0,width):
@@ -20,29 +23,18 @@ def drawSB(sb):
             n.draw(win)
             nodes.append(n)
     
-    # Fill in source/sink nodes to be red
-    col_index = 0
-    for demand in sb.demands:
-        col_index = col_index+1
-        if col_index == len(colours):
-            col_index = 0
-        for n in demand:
-            (x,y) = sb.getNode(n).getID()
-            nodes[x*width + y].setFill(colours[col_index])
-
-    # Draw all edges
-    for i in range(0,width):
-        for j in range(0,width):
-            # Draw 'East' edge for each node (apart from nodes on RHS)
-            if i != width-1:
-                l = Line(nodes[i*width + j].getCenter(),nodes[(i+1)*width + j].getCenter())    
-                l.draw(win)
-
-            # Draw 'South' edge for each node (apart from bottom nodes)
-            if j != width-1:
-                l = Line(nodes[i*width + j].getCenter(),nodes[i*width + (j+1)].getCenter())    
-                l.draw(win)
-
+    # Draw edges between nodes
+    for edge in sb.edges:
+        if not edge.node1.isTerminal and not edge.node2.isTerminal:
+            i,j = edge.node1.getX(),edge.node1.getY()
+            p1 = nodes[i*width + j].getCenter()
+            i,j = edge.node2.getX(),edge.node2.getY()
+            p2 = nodes[i*width + j].getCenter()
+            l = Line(p1,p2)
+            l.setFill("gray")    
+            edges.append(l)
+            l.draw(win)
+            
     # Add terminal edges and text labels
     for col in range(0,width):
         for row in range(0,width):
@@ -53,6 +45,7 @@ def drawSB(sb):
                 t = Text(Point(x-1.5*terminal_len,y),"W"+str(row))
                 t.setSize(font_size)
                 t.draw(win)
+                labels.append(t)
             if col == width-1:
                 x,y = nodes[col*width + row].getCenter().getX(), nodes[col*width + row].getCenter().getY()
                 l = Line(Point(x,y),Point(x+terminal_len,y))
@@ -60,6 +53,7 @@ def drawSB(sb):
                 t = Text(Point(x+1.5*terminal_len,y),"E"+str(row))
                 t.setSize(font_size)
                 t.draw(win)
+                labels.append(t)
             if row == 0:
                 x,y = nodes[col*width + row].getCenter().getX(), nodes[col*width + row].getCenter().getY()
                 l = Line(Point(x,y),Point(x,y-terminal_len))
@@ -67,6 +61,7 @@ def drawSB(sb):
                 t = Text(Point(x,y-1.5*terminal_len),"N"+str(col))
                 t.setSize(font_size)
                 t.draw(win)
+                labels.append(t)
             if row == width-1:
                 x,y = nodes[col*width + row].getCenter().getX(), nodes[col*width + row].getCenter().getY()
                 l = Line(Point(x,y),Point(x,y+terminal_len))
@@ -74,25 +69,29 @@ def drawSB(sb):
                 t = Text(Point(x,y+1.5*terminal_len),"S"+str(col))
                 t.setSize(font_size)
                 t.draw(win)
-    
-    # Plot routes
-    col_index = 0
-    for route in sb.routes:
-        col_index = col_index+1
-        if col_index == len(colours):
-            col_index = 0
-        for i in range(0,len(route)-3):
-                
-                x,y = sb.getNode(route[i+1]).getID()
-                src = nodes[int(x)*width + int(y)].getCenter()
-                x,y = sb.getNode(route[int(i)+2]).getID()
-                dest = nodes[int(x)*width + int(y)].getCenter()
-                l = Line(src,dest)
-                l.setFill(colours[col_index])
-                l.draw(win)
+                labels.append(t)
 
+    # Colour route paths
+    for i,edge in enumerate(sb.edges):
+        if not edge.node1.isTerminal and not edge.node2.isTerminal:
+            if edge.getNetName() != None:
+                for j,routeid in enumerate(sb.routeids):
+                    if edge.getNetName() == routeid:                       
+                        edges[i].setFill(colours[j%len(colours)])
+    
+    # Colour route labels
+    for j,routeid in enumerate(sb.routeids):
+        str_routeid1 = routeid[0][0] + str(routeid[0][1])
+        str_routeid2 = routeid[1][0] + str(routeid[1][1])
+        for t in labels:
+            if t.getText() == str_routeid1:
+                t.setTextColor(colours[j%len(colours)])
+            if t.getText() == str_routeid2:
+                t.setTextColor(colours[j%len(colours)])
+    
     win.getMouse()
     win.close()
+
 
 
 
