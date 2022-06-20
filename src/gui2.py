@@ -3,6 +3,7 @@ from graphics import *
 from switchbox2 import Switchbox
 nodes = []
 edges = []
+labels = []
 colours = ['red','blue','green','greenyellow','indigo']
 
 def drawSB(sb):
@@ -44,6 +45,7 @@ def drawSB(sb):
                 t = Text(Point(x-1.5*terminal_len,y),"W"+str(row))
                 t.setSize(font_size)
                 t.draw(win)
+                labels.append(t)
             if col == width-1:
                 x,y = nodes[col*width + row].getCenter().getX(), nodes[col*width + row].getCenter().getY()
                 l = Line(Point(x,y),Point(x+terminal_len,y))
@@ -51,6 +53,7 @@ def drawSB(sb):
                 t = Text(Point(x+1.5*terminal_len,y),"E"+str(row))
                 t.setSize(font_size)
                 t.draw(win)
+                labels.append(t)
             if row == 0:
                 x,y = nodes[col*width + row].getCenter().getX(), nodes[col*width + row].getCenter().getY()
                 l = Line(Point(x,y),Point(x,y-terminal_len))
@@ -58,6 +61,7 @@ def drawSB(sb):
                 t = Text(Point(x,y-1.5*terminal_len),"N"+str(col))
                 t.setSize(font_size)
                 t.draw(win)
+                labels.append(t)
             if row == width-1:
                 x,y = nodes[col*width + row].getCenter().getX(), nodes[col*width + row].getCenter().getY()
                 l = Line(Point(x,y),Point(x,y+terminal_len))
@@ -65,16 +69,29 @@ def drawSB(sb):
                 t = Text(Point(x,y+1.5*terminal_len),"S"+str(col))
                 t.setSize(font_size)
                 t.draw(win)
+                labels.append(t)
 
+    # Colour route paths
     for i,edge in enumerate(sb.edges):
         if not edge.node1.isTerminal and not edge.node2.isTerminal:
             if edge.getNetName() != None:
                 for j,routeid in enumerate(sb.routeids):
-                    if edge.getNetName() == routeid:
+                    if edge.getNetName() == routeid:                       
                         edges[i].setFill(colours[j%len(colours)])
-
+    
+    # Colour route labels
+    for j,routeid in enumerate(sb.routeids):
+        str_routeid1 = routeid[0][0] + str(routeid[0][1])
+        str_routeid2 = routeid[1][0] + str(routeid[1][1])
+        for t in labels:
+            if t.getText() == str_routeid1:
+                t.setTextColor(colours[j%len(colours)])
+            if t.getText() == str_routeid2:
+                t.setTextColor(colours[j%len(colours)])
+    
     win.getMouse()
     win.close()
+
 
 
 
