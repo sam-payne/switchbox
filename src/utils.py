@@ -32,6 +32,8 @@ def parseDemands(input_file):
     demands = []
     with open(input_file,"r") as demand_file:
         for line in demand_file:
+            if len(line) == 0 or line.isspace():
+                continue
             line = line.split(',')
             src = line[0]
             dest = line[1]
