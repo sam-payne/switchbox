@@ -66,7 +66,6 @@ def HorizontalFirst(sb):
         src = sb.getNode(demand[0])
         dest = sb.getNode(demand[1])
         routeid = (src.getID(),dest.getID())
-        print(routeid)
         firstNode = src.getNodeFromTerminal()
         lastNode = dest.getNodeFromTerminal()
         last_x, last_y = int(lastNode.getID()[0]), int(lastNode.getID()[1])
@@ -75,19 +74,21 @@ def HorizontalFirst(sb):
         route.append(src.getID())
         route.append(tuple(curr_node))
         while tuple(curr_node) != lastNode.getID():
-            print("Current node = " + str(curr_node))
+            #print("Current node = " + str(curr_node))
+
+            # Unless x values are the same, move horizontally first
             if curr_node[0] != last_x:
                 if curr_node[0] < last_x:
                     target = (curr_node[0]+1,curr_node[1])
                 else:
                     target = (curr_node[0]-1,curr_node[1])
-                print("Target = " + str(target))
+                #print("Target = " + str(target))
                 if sb.checkTurn(tuple(curr_node),tuple(target),routeid):
                     route.append((target))
                     curr_node = target
                     continue
                 
-            
+            # If x values are the same, or moving horizontally fails, move vertically instead
             if curr_node[1] < last_y:
                 target = (curr_node[0],curr_node[1]+1)
             elif curr_node[1] > last_y:
@@ -95,12 +96,16 @@ def HorizontalFirst(sb):
             else:
                 raise Exception("Routing failed")
                 
-            print("Target = " + str(target))
+            #print("Target = " + str(target))
+            # If this works, add to route, otherwise return failed
             if sb.checkTurn(tuple(curr_node),tuple(target),routeid):
                     curr_node = target
                     route.append(tuple(target))
             else:
                 raise Exception("Routing failed")
         route.append(dest.getID())
-        print(route)
+        #print(route)
         sb.addRoute(route)
+
+    
+        
