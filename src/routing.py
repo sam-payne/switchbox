@@ -63,8 +63,8 @@ import hadlocks
 def Hadlocks(sb):
     used_nodes = []
     for demand in sb.demands:
-        print("Routing -> ",end='')
-        print(demand)
+        # print("Routing -> ",end='')
+        # print(demand)
         src = sb.getNode(demand[0])
         dest = sb.getNode(demand[1])
         routeid = (src.getID(),dest.getID())

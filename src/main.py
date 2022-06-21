@@ -5,8 +5,8 @@ from routing import *
 
 demands = parseDemands("demands.txt")
 
-sb = Switchbox(12,demands)
+sb = Switchbox(9,demands)
 sb.printDemands()
 
-randomWalk(sb)
+Hadlocks(sb)
 drawSB(sb)                                                                                                    

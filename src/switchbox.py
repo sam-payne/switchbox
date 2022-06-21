@@ -31,7 +31,10 @@ class Node:
             return str(self.config)
 
     def checkTurn(self,dest,routeid):
-        dir = self.getDir(dest.getID())
+        try:
+            dir = self.getDir(dest.getID())
+        except:
+            return False
         edge = self.getEdge(dir)
         # if no current net exists on the edge, valid turn
         if edge.netName == None:

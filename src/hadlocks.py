@@ -93,13 +93,13 @@ def varyByOne(node1,node2):
         return True
     return False
 
-def refineRoute(route):
-    # Route will have wrong turns in it - sort this out by working backwards through route
+def refineRoute(route,sb,routeid):
+    # Route will have wrong turns in it - sort this out by working backwards through route, and finding the valid one
     new_route = []
     curr_node = route[-1]
     new_route.append(curr_node)
     for i in range(len(route)-2,-1,-1):
-        if varyByOne(curr_node,route[i]):
+        if sb.checkTurn(curr_node,route[i],routeid):
             curr_node = route[i]
             new_route.append(curr_node)
     new_route.reverse()
@@ -113,22 +113,16 @@ def HadlocksAlgo(width,demand,obstacles,sb,routeid):
     p_stack = []
     n_stack = []
     route = []
+    since_last_unstack = 0
     src = demand[0]
     dest = demand[1]
     d = 0
     u_node = src
     route.append(u_node)
     while u_node != dest:
-        # print("P-stack:")
-        # print(p_stack)
-        
-        #print(u_node)
         visited.append(u_node)
         removeVisitedFromStack(u_node,p_stack,n_stack)
         stack(n_stack,getQNegativeNeighbours(u_node,dest,width,visited,sb,routeid))
-        # print("Step 2")
-        # print("N-stack")
-        # print(n_stack)
         # If no unlabeled Q-Positive neighbours...
         if not getQPositiveNeighbours(u_node,dest,width,visited,sb,routeid):
             
@@ -143,7 +137,7 @@ def HadlocksAlgo(width,demand,obstacles,sb,routeid):
                     p_stack = n_stack.copy()
                     d = d+1
             # print("Step 3, part 2")
-            u_node = unstack(p_stack)
+            u_node = unstack(p_stack)        
             
         
         else:
@@ -151,14 +145,10 @@ def HadlocksAlgo(width,demand,obstacles,sb,routeid):
             qpos_neighbours = getQPositiveNeighbours(u_node,dest,width,visited,sb,routeid)
             u_node = qpos_neighbours.pop(0)
             stack(p_stack,qpos_neighbours)
-        #     print("P-stack:")
-        #     print(p_stack)
-        # print(u_node)
+           
         route.append(u_node)
-        # print("Route: ",end='')
-        # print(route)
-    final = refineRoute(route)
-
+        
+    final = refineRoute(route,sb,routeid)
 
     return final
 
