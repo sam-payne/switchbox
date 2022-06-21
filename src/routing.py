@@ -1,5 +1,8 @@
 import random
 import hadlocks
+import sys
+
+from utils import startprogress, progress, endprogress
 
 # def randomWalk(sb):
 #     route_iterations = 0
@@ -62,7 +65,12 @@ import hadlocks
 
 def Hadlocks(sb):
     used_nodes = []
+    print("Routing demands using Hadlocks Algorithm...")
+    i=1
+    startprogress("Routing")
     for demand in sb.demands:
+        completeness = 100 * sb.demands.index(demand) / len(sb.demands)
+        progress(completeness)
         # print("Routing -> ",end='')
         # print(demand)
         src = sb.getNode(demand[0])
@@ -76,6 +84,7 @@ def Hadlocks(sb):
         route.append(dest.getID())
         # print(route)
         sb.addRoute(route)    
+    endprogress()
         
 def HorizontalFirst(sb):
     route = []
