@@ -1,5 +1,5 @@
-from gui2 import drawSB
-from switchbox2 import Switchbox
+from gui import drawSB
+from switchbox import Switchbox
 import random
 from routing import *
 
@@ -25,12 +25,20 @@ def routeTest(width,routing_method, routeback, nets, iterations, max_demands):
                     HorizontalFirst(sb)
                     #sb.printDemands()
                 except:
+                    drawSB(sb)
                     continue
                 else:
                     success_counter = success_counter + 1
-                    # if number_demands == max_demands:
-                    #     drawSB(sb)
-                    #     break
+
+            if routing_method == 'Hadlocks':
+                try:
+                    Hadlocks(sb)
+                    #sb.printDemands()
+                except:
+                    drawSB(sb)
+                    continue
+                else:
+                    success_counter = success_counter + 1   
     
         results.append(success_counter)
 
@@ -71,4 +79,4 @@ def genDest(width):
     
     return(pole,i)
 
-routeTest(8,"HorizontalFirst",routeback=False,nets=False,iterations=1000,max_demands=10)
+routeTest(8,"HorizontalFirst",routeback=False,nets=False,iterations=10,max_demands=10)

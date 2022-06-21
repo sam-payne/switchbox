@@ -1,4 +1,5 @@
 import random
+import hadlocks
 
 # def randomWalk(sb):
 #     route_iterations = 0
@@ -56,8 +57,26 @@ import random
 #             for r in all_routes:
 #                 sb.addRoute(r)
                        
-# Always try to move horizontally until x coords matches, then move in y-direction            
-             
+# Always try to move horizontally until x coords matches, then move in y-direction           
+# 
+
+def Hadlocks(sb):
+    used_nodes = []
+    for demand in sb.demands:
+        print("Routing -> ",end='')
+        print(demand)
+        src = sb.getNode(demand[0])
+        dest = sb.getNode(demand[1])
+        routeid = (src.getID(),dest.getID())
+        firstNode = src.getNodeFromTerminal()
+        lastNode = dest.getNodeFromTerminal()
+        route = hadlocks.HadlocksAlgo(sb.width,(firstNode.getID(),lastNode.getID()),used_nodes,sb,routeid)
+        used_nodes = used_nodes + route 
+        route.insert(0,src.getID())
+        route.append(dest.getID())
+        # print(route)
+        sb.addRoute(route)    
+        
 def HorizontalFirst(sb):
     route = []
     for demand in sb.demands:
