@@ -2,11 +2,15 @@ from switchbox import Switchbox
 from gui import *
 from utils import *
 from routing import *
+from testing import getRouteEfficiency, routeTestSingle, routeTestBatch
 
-demands = parseDemands("demands.txt")
+# demands = parseDemands("demands.txt")
 
-sb = Switchbox(9,demands)
-sb.printDemands()
+# sb = Switchbox(12,demands)
+# sb.printDemands()
 
-Hadlocks(sb)
-drawSB(sb)                                                                                                    
+# Hadlocks(sb)
+# getRouteEfficiency(sb)
+# drawSB(sb)       
+
+routeTestSingle(32,"Hadlocks",False,False,15)

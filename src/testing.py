@@ -2,8 +2,27 @@ from gui import drawSB
 from switchbox import Switchbox
 import random
 from routing import *
+from utils import *
 
-def routeTest(width,routing_method, routeback, nets, iterations, max_demands):
+def routeTestSingle(width,routing_method,routeback,nets,number_demands):
+
+    demands = []
+    for d in range(0,number_demands):
+        # Generate the appropriate number of demands
+        
+        demands.append(genDemand(width,routeback))
+    
+    sb = Switchbox(width,demands)
+    if routing_method == 'HorizontalFirst':
+        HorizontalFirst(sb)
+
+    if routing_method == 'Hadlocks':
+        Hadlocks(sb)
+    
+    getRouteEfficiency(sb)
+   # drawSB(sb)
+
+def routeTestBatch(width,routing_method, routeback, nets, iterations, max_demands):
     results = []
     demands = ''
     for number_demands in range(1,max_demands+1):
@@ -35,7 +54,7 @@ def routeTest(width,routing_method, routeback, nets, iterations, max_demands):
                     Hadlocks(sb)
                     #sb.printDemands()
                 except:
-                    drawSB(sb)
+                    #drawSB(sb)
                     continue
                 else:
                     success_counter = success_counter + 1   
@@ -63,6 +82,7 @@ def genDemand(width,routeback):
     return(demand)
 
 
+
 def genDest(width):
     i=0
     i = random.randint(0,3)
@@ -75,8 +95,22 @@ def genDest(width):
         pole = 'S'
     if i==3:
         pole = 'W'
-    i = random.randint(0,width-1)
+    i = random.randint(1,width-2)
     
     return(pole,i)
 
-routeTest(8,"HorizontalFirst",routeback=False,nets=False,iterations=10,max_demands=10)
+def getRouteEfficiency(sb):
+    if not sb.routes:
+        return 1
+    total_len = 0
+    total_man = 0
+    for r in sb.routes:
+        length = len(r) - 3
+        total_len = total_len + length
+        manhatten = manhat(r[1],r[-2])
+        total_man = total_man + manhatten
+        id = str(r[0]) + str(r[-1])
+        percent = 100*(manhatten/length)
+        print("For route " + id + ", length = " + str(length) + " compared to possible " + str(manhatten) + " (" + str(percent) + "%)")
+    overall_percent = 100*total_man/total_len
+    print("Overall Efficiency = " + str(overall_percent) + "%")
