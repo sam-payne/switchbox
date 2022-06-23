@@ -1,5 +1,9 @@
 import sys
 
+
+global show_progressbar 
+show_progressbar = False
+
 def manhat(a,b):
     # Return manhattan distance between two coordinates
     ax, ay = a
@@ -14,6 +18,10 @@ def manhat(a,b):
         diffy = by - ay
     return diffx + diffy
 
+#########################################
+# For use in checking if two routes are in the same net
+# If EITHER the src or dest of either route are the same,
+# they are from the same net (so can share edges)
 def matchingRouteID(id1,id2):
     if id1[0] == id2[0] or id1[0] == id2[1]:
         return True

@@ -1,5 +1,8 @@
 from utils import *
 
+###################################
+# Node class, representing each switch and terminal
+
 class Node:
     def __init__(self,id,isTerminal):
         self.id = id
@@ -44,8 +47,10 @@ class Node:
             return True
         else:
             return False
-            
 
+    ###############################        
+    # Set configuration of node according to a route from src to dest through self
+    # Check if valid by checking if edge already in use by a different net
     def route(self,src_node,dest_node,routeid):
         # Determine which outgoing edge is required
         if self.N_node != None:
@@ -97,6 +102,8 @@ class Node:
         else:
             raise Exception("Invalid dirs")
 
+    ####################################
+    # addEdge and addNode used in construction of SB
     def addEdge(self,edge,dir):
         if dir=='N':
             edge.connectNode(self)
@@ -125,6 +132,8 @@ class Node:
         else:
             raise Exception("Invalid dirs")
 
+    #########################################
+    # Return which node is attached to a terminal
     def getNodeFromTerminal(self):
         # If terminal, then get attached node
         if self.N_node != None:
@@ -166,7 +175,10 @@ class Edge:
             return self.node1
         else:
             raise Exception("Invalid node")
-        
+
+
+######################################
+# Swich box class, made from a grid of nodes and edges       
 class Switchbox:
     def __init__(self,width,demands):
         self.nodes = []
@@ -233,6 +245,17 @@ class Switchbox:
             self.connectTwoNodes(t,'E',self.nodes[0][x],'W')
             self.terminals.append(t)
   
+    def copy(self):
+        sb_new = Switchbox(self.width,None)
+        sb_new.width = self.width
+        sb_new.nodes = self.nodes.copy()
+        sb_new.terminals = self.terminals.copy()
+        sb_new.edges = self.edges.copy()
+        sb_new.demands = self.demands.copy()
+        sb_new.routes = self.routes.copy()
+        sb_new.routeids = self.routeids.copy()
+
+        return sb_new
 
     def connectTwoNodes(self,node1,node1_dir,node2,node2_dir):
         
@@ -265,8 +288,8 @@ class Switchbox:
                 edge = node1.getEdge(node1_dir)
                 node2.addEdge(edge,node2_dir)
 
-        
-            
+    ############################################    
+    # Double check demands are valid
     def setDemands(self,demands):
         for demand in demands:
             for node in demand:
@@ -348,6 +371,8 @@ class Switchbox:
                 return False
         return True
 
+    ########################################
+    # Check if a move from src to dest is valid, by comparing route IDs
     def checkTurn(self,src,dest,routeid):
         src = self.getNode(src)
         dest = self.getNode(dest)
@@ -356,6 +381,21 @@ class Switchbox:
         else:
             return False
 
+    def resetSB(self):
+        for row in self.nodes:
+            for n in row:
+                n.config = []
+        for e in self.edges:
+            e.netName = None
+        self.used = []
+        self.routes = []
+        self.routeids = []
+        
 
-# sb = Switchbox(4,None)
-# sb.checkRoute([('N',0),(0,0),(1,0),('N',1)])
+    def exportConfig(self):
+        f = open("sb_config",'w')
+        for col in self.nodes:
+            for n in col:
+                line = str(n.getID()) + "," + str(n.config) + "\n"
+                f.write(line)
+        f.close()
