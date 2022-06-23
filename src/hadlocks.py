@@ -106,14 +106,14 @@ def refineRoute(route,sb,routeid):
     return new_route
 
 
-def HadlocksAlgo(width,demand,obstacles,sb,routeid):
+def HadlocksAlgo(width,demand,sb,routeid):
     #demand = ((0,0),(7,4))
     visited = []
     # print(demand)
     p_stack = []
     n_stack = []
     route = []
-    since_last_unstack = 0
+
     src = demand[0]
     dest = demand[1]
     d = 0

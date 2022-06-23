@@ -1,8 +1,11 @@
+from math import factorial
 import random
 import hadlocks
 import sys
+import itertools
+import copy
 
-from utils import startprogress, progress, endprogress
+from utils import startprogress, progress, endprogress, show_progressbar
 
 # def randomWalk(sb):
 #     route_iterations = 0
@@ -60,17 +63,19 @@ from utils import startprogress, progress, endprogress
 #             for r in all_routes:
 #                 sb.addRoute(r)
                        
-# Always try to move horizontally until x coords matches, then move in y-direction           
-# 
+#############################################
+# Implement hadlock algorithm on each demand in turn
+# Return number of successfully routed demands
 
 def Hadlocks(sb):
     used_nodes = []
-    print("Routing demands using Hadlocks Algorithm...")
-    i=1
-    startprogress("Routing")
+    routed_success = 0
+    
+    if show_progressbar == True:
+        print("Routing demands using Hadlocks Algorithm...")
+        startprogress("Routing")
+    
     for demand in sb.demands:
-        completeness = 100 * sb.demands.index(demand) / len(sb.demands)
-        progress(completeness)
         # print("Routing -> ",end='')
         # print(demand)
         src = sb.getNode(demand[0])
@@ -78,13 +83,49 @@ def Hadlocks(sb):
         routeid = (src.getID(),dest.getID())
         firstNode = src.getNodeFromTerminal()
         lastNode = dest.getNodeFromTerminal()
-        route = hadlocks.HadlocksAlgo(sb.width,(firstNode.getID(),lastNode.getID()),used_nodes,sb,routeid)
+        try:
+            route = hadlocks.HadlocksAlgo(sb.width,(firstNode.getID(),lastNode.getID()),sb,routeid)
+        except:
+            continue
+        routed_success += 1
         used_nodes = used_nodes + route 
         route.insert(0,src.getID())
         route.append(dest.getID())
         # print(route)
-        sb.addRoute(route)    
-    endprogress()
+        sb.addRoute(route)   
+        if show_progressbar == True: 
+            completeness = 100 * sb.demands.index(demand) / len(sb.demands)
+            progress(completeness)
+    if show_progressbar == True:
+        endprogress()
+    return routed_success
+
+def RandomHadlocks(sb):
+    demands = sb.demands
+    success_counter = 0
+    if len(demands)<6:
+        perms = list(itertools.permutations(demands))
+        random.shuffle(perms)
+    i = 0
+    while success_counter != len(demands):
+        success_counter = 0
+        if len(demands)<6:
+            if i>len(perms)-1:
+                break
+            sb.resetSB()
+            sb.demands = perms[i]
+            success_counter = Hadlocks(sb)
+        else:
+            if i>= 300:
+                break
+            sb.resetSB()
+            random.shuffle(sb.demands)
+            success_counter = Hadlocks(sb)
+        i += 1
+        
+    return success_counter
+        
+    
         
 def HorizontalFirst(sb):
     route = []
