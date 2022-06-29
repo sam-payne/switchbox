@@ -1,6 +1,30 @@
 from utils import *
 from switchbox import Switchbox
 
+def getTotalManhatten(sb):
+    total = 0
+    for d in sb.demands:
+        n1 = sb.getNode(d[0]).getNodeFromTerminal().getID()
+        n2 = sb.getNode(d[1]).getNodeFromTerminal().getID()
+        total += manhat(n1,n2)
+    return total
+
+def getTotalRouteLength(sb):
+    length = 0
+    if not sb.routes:
+        return -1
+    for r in sb.routes:
+        length += len(r) - 3
+    return length
+
+def getMaxRouteLength(sb):
+    max = 0
+    if not sb.routes:
+        return -1
+    for r in sb.routes:
+        if len(r)>max:
+            max = len(r)
+    return max 
 
 def getRouteEfficiency(sb):
     report = "\n\n******** Routing Efficiency ********\n"
