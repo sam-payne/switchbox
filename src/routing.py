@@ -4,7 +4,7 @@ import hadlocks
 import sys
 import itertools
 import copy
-
+import simulated_annealing
 from utils import startprogress, progress, endprogress, show_progressbar
 
 # def randomWalk(sb):
@@ -67,6 +67,9 @@ from utils import startprogress, progress, endprogress, show_progressbar
 # Implement hadlock algorithm on each demand in turn
 # Return number of successfully routed demands
 
+def SimAnnealing(sb):
+    simulated_annealing.SimAnnealingAlgo(sb)
+
 def Hadlocks(sb):
     used_nodes = []
     routed_success = 0
@@ -100,6 +103,8 @@ def Hadlocks(sb):
         endprogress()
     return routed_success
 
+
+
 def RandomHadlocks(sb):
     demands = sb.demands
     success_counter = 0
@@ -131,7 +136,7 @@ def RandomHadlocks(sb):
             if success_counter>len(best_route):
                 best_route = sb.routes.copy()
         i += 1
-        if show_progressbar:
+        if show_progressbar:    print(sol)
             print(f"Failed after {i} attempt(s)")
         
     return success_counter
