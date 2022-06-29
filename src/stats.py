@@ -1,6 +1,7 @@
 from utils import *
 from switchbox import Switchbox
 
+
 def getRouteEfficiency(sb):
     report = "\n\n******** Routing Efficiency ********\n"
     report += "(The length of each route compared to its shortest possible path (Manhatten distance))\n\n"
@@ -23,13 +24,25 @@ def getRouteEfficiency(sb):
 
 def getRoutingSuccess(sb):
     success_counter = 0
-    report = "\n\n******** Routing Success ********\n"
+    demand_satisfied = False
+    fails = ""
+    report = "\n\n******** Routing Summary ********\n"
     for d in sb.demands:
+        demand_satisfied = False
         for r in sb.routes:
             if d[0]==r[0] and d[-1]==r[-1]:
+                demand_satisfied = True
                 success_counter += 1
                 report += "Successfully routed " + str(d[0]) + " <-> " + str(d[1]) + "\n"
+        if demand_satisfied == False:
+            fails += "Failed to route " + str(d[0]) + " <-> " + str(d[1]) + "\n"
+
+    report += "\n" + fails
     report += "\nRouted " + str(len(sb.routes)) + "/" + str(len(sb.demands)) + " (" + str(round(100*len(sb.routes)/len(sb.demands),2)) + "%)\n\n"
+    if len(sb.routes) == len(sb.demands):
+        report += "******** Routing successful! ********"
+    else:
+        report += "******** Routing failed! ********"
     return report
 
 def getSBUtilisation(sb):
@@ -53,8 +66,9 @@ def getSBUtilisation(sb):
     report += "************************"
     return report
 
-def getAllStats(sb):
-    report = getRoutingSuccess(sb)
+def getFullReport(sb):
+    report = "******** Routing finished - full report... ********"
     report += getSBUtilisation(sb)
     report += getRouteEfficiency(sb)
+    report += getRoutingSuccess(sb)
     return report

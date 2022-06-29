@@ -1,16 +1,19 @@
+from stats import getFullReport
 from switchbox import Switchbox
 from gui import *
 from utils import *
 from routing import *
-from testing import getRouteEfficiency, routeTestSingle, routeTestBatch
+from testing import routeTestSingle, routeTestBatch
 
 # demands = parseDemands("demands.txt")
 
-# sb = Switchbox(12,demands)
+# sb = Switchbox(10,demands)
 # sb.printDemands()
 
 # Hadlocks(sb)
-# getRouteEfficiency(sb)
+# print(getFullReport(sb))
 # drawSB(sb)       
 
-routeTestSingle(32,"Hadlocks",False,False,15)
+sb = routeTestSingle(12,"Hadlocks",False,False,10)
+print(getFullReport(sb))
+drawSB(sb)
