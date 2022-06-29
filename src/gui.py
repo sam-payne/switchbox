@@ -4,7 +4,8 @@ from switchbox import Switchbox
 nodes = []
 edges = []
 labels = []
-colours = ['red','blue','green','greenyellow','indigo']
+terminal_edges = []
+colours = ['red','blue','green','greenyellow','indigo','lightcoral','indianred','maroon','coral','burlywood','olive','seagreen','slategrey','indigo','plum']
 
 def drawSB(sb):
     width = sb.width    
@@ -31,7 +32,7 @@ def drawSB(sb):
             i,j = edge.node2.getX(),edge.node2.getY()
             p2 = nodes[i*width + j].getCenter()
             l = Line(p1,p2)
-            l.setFill("gray")    
+            l.setFill("whitesmoke")    
             edges.append(l)
             l.draw(win)
             
@@ -41,7 +42,9 @@ def drawSB(sb):
             if col == 0:
                 x,y = nodes[col*width + row].getCenter().getX(), nodes[col*width + row].getCenter().getY()
                 l = Line(Point(x,y),Point(x-terminal_len,y))
+                l.setFill("whitesmoke") 
                 l.draw(win)
+                terminal_edges.append(l)
                 t = Text(Point(x-1.5*terminal_len,y),"W"+str(row))
                 t.setSize(font_size)
                 t.draw(win)
@@ -49,6 +52,8 @@ def drawSB(sb):
             if col == width-1:
                 x,y = nodes[col*width + row].getCenter().getX(), nodes[col*width + row].getCenter().getY()
                 l = Line(Point(x,y),Point(x+terminal_len,y))
+                l.setFill("whitesmoke") 
+                terminal_edges.append(l)
                 l.draw(win)
                 t = Text(Point(x+1.5*terminal_len,y),"E"+str(row))
                 t.setSize(font_size)
@@ -57,7 +62,9 @@ def drawSB(sb):
             if row == 0:
                 x,y = nodes[col*width + row].getCenter().getX(), nodes[col*width + row].getCenter().getY()
                 l = Line(Point(x,y),Point(x,y-terminal_len))
+                l.setFill("whitesmoke") 
                 l.draw(win)
+                terminal_edges.append(l)
                 t = Text(Point(x,y-1.5*terminal_len),"N"+str(col))
                 t.setSize(font_size)
                 t.draw(win)
@@ -65,7 +72,9 @@ def drawSB(sb):
             if row == width-1:
                 x,y = nodes[col*width + row].getCenter().getX(), nodes[col*width + row].getCenter().getY()
                 l = Line(Point(x,y),Point(x,y+terminal_len))
+                l.setFill("whitesmoke") 
                 l.draw(win)
+                terminal_edges.append(l)
                 t = Text(Point(x,y+1.5*terminal_len),"S"+str(col))
                 t.setSize(font_size)
                 t.draw(win)
@@ -86,8 +95,10 @@ def drawSB(sb):
         for t in labels:
             if t.getText() == str_routeid1:
                 t.setTextColor(colours[j%len(colours)])
+                terminal_edges[labels.index(t)].setFill(colours[j%len(colours)])
             if t.getText() == str_routeid2:
                 t.setTextColor(colours[j%len(colours)])
+                terminal_edges[labels.index(t)].setFill(colours[j%len(colours)])
     
     win.getMouse()
     win.close()
