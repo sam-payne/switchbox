@@ -103,6 +103,7 @@ def Hadlocks(sb):
 def RandomHadlocks(sb):
     demands = sb.demands
     success_counter = 0
+    best_route = [(None,None)] # Remember the best performing solution so far
     if len(demands)<6:
         perms = list(itertools.permutations(demands))
         random.shuffle(perms)
@@ -111,17 +112,27 @@ def RandomHadlocks(sb):
         success_counter = 0
         if len(demands)<6:
             if i>len(perms)-1:
+                sb.resetSB()
+                sb.addRoutes(best_route)
                 break
             sb.resetSB()
             sb.demands = perms[i]
             success_counter = Hadlocks(sb)
+            if success_counter>len(best_route):
+                best_route = sb.routes.copy()
         else:
-            if i>= 300:
+            if i>= 60:
+                sb.resetSB()
+                sb.addRoutes(best_route)
                 break
             sb.resetSB()
             random.shuffle(sb.demands)
             success_counter = Hadlocks(sb)
+            if success_counter>len(best_route):
+                best_route = sb.routes.copy()
         i += 1
+        if show_progressbar:
+            print(f"Failed after {i} attempt(s)")
         
     return success_counter
         
