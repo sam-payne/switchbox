@@ -69,7 +69,7 @@ class Node:
         if edge.netName == None:
             edge.netName = routeid
         elif not matchingRouteID(edge.netName,routeid):
-            raise Exception("Route conflict")
+            raise Exception(f"Route conflict when trying to route {routeid} - edge already used by {edge.netName}")
         
         src_dir = self.getDir(src_node)
         dest_dir = self.getDir(dest_node)
@@ -357,7 +357,10 @@ class Switchbox:
         assert (dest[0] == 'N') or (dest[0] == 'E') or (dest[0] == 'S') or (dest[0] == 'W'), "Route does not finish at a terminal"
         for i in range(0,len(route)-2):
             curr = self.getNode(route[i+1])
-            curr.route(route[i],route[i+2],routeid)
+            try:
+                curr.route(route[i],route[i+2],routeid)
+            except:
+                raise Exception(f"Route conflict when routing {routeid}")
 
     def checkRoute(self,route):
         routeid = (route[0],route[-1])
