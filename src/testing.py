@@ -5,7 +5,7 @@ import random
 from routing import *
 from utils import *
 from stats import *
-
+import matplotlib.pyplot as plt
 from stats import *
 
 ########################
@@ -25,6 +25,9 @@ def routeTestSingle(width,routing_method,routeback,common_nets,number_demands):
 
     if routing_method == 'Hadlocks':
         Hadlocks(sb)
+
+    if routing_method == 'RandomHadlocks':
+        RandomHadlocks(sb)
     
     # Return switch box for further analysis
     return sb
@@ -35,8 +38,8 @@ def routeTestBatch(width,routing_method, routeback, common_nets, max_demands, it
     results = []
     demands = ''
     startprogress("Running batch test")
-
-    for number_demands in range(1,max_demands+1):
+    number_of_demands = range(1,max_demands+1)
+    for number_demands in number_of_demands:
         # Repeat up to the maximum number of demands to route
 
         success_counter = 0
@@ -56,8 +59,8 @@ def routeTestBatch(width,routing_method, routeback, common_nets, max_demands, it
                     HorizontalFirst(sb)
                     #sb.printDemands()
                 except:
-                    print(getAllStats(sb))
-                    drawSB(sb)
+                    #print(getAllStats(sb))
+                    #drawSB(sb)
                     continue
                 else:
 
@@ -72,18 +75,28 @@ def routeTestBatch(width,routing_method, routeback, common_nets, max_demands, it
                 routed_success = RandomHadlocks(sb)
                 if routed_success == len(demands):
                     success_counter = success_counter + 1   
-                else:
-                    print(getAllStats(sb))
-                    drawSB(sb)
-                    break
+                # else:
+                #     #print(getAllStats(sb))
+                #     #drawSB(sb)
+                #     break
             
             completeness = 100*((number_demands*iterations+i+1)/((max_demands+1)*iterations))         
             progress(completeness)
         results.append(success_counter)
     endprogress()
+    
+    percent_results = []
     for i,r in enumerate(results):
         percentage = round(100 * r/iterations,2)
+        percent_results.append(percentage)
         print("For " + str(i+1) + " demands, success -> " + str(r) + "/" + str(iterations) + " (" + str(percentage) + "%)")
+    
+    plt.plot(number_of_demands,percent_results)
+    plt.xlabel("Number of demands")
+    plt.ylabel("Success rate (%)")
+    plt.title(f"{width}x{width} SB using {routing_method} routing algorithm")
+    plt.xticks(range(1,max(number_of_demands)+1,1))
+    plt.show()
     return sb
 
 ##########################################
