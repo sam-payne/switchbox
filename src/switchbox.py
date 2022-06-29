@@ -340,7 +340,10 @@ class Switchbox:
             for n in col:
                 if (n.getID()) == nodeid:
                     return n
-
+    def addRoutes(self,routes):
+        for route in routes:
+            self.addRoute(route)
+            
     def addRoute(self,route):
         # Takes a route between two terminals, works out node config, adds this to the Sb and removes used edges
         
