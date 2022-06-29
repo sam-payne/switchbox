@@ -1,34 +1,42 @@
-from distutils.command.config import config
+
 from gui import drawSB
 from switchbox import Switchbox
 import random
 from routing import *
 from utils import *
 from stats import *
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from stats import *
 
 ########################
 # Generate a single routing test for a set number of demands
 def routeTestSingle(width,routing_method,routeback,common_nets,number_demands):
-
+    
     demands = []
-    for d in range(0,number_demands):
-        # Generate the appropriate number of demands
+    demands = genDemands(width,number_demands,routeback,common_nets)
+    # for d in range(0,number_demands):
+    #     # Generate the appropriate number of demands
         
-        demands.append(genDemand(width,routeback,common_nets,demands))
+    #     demands.append(genDemand(width,routeback,common_nets,demands))
     
     # Route using given method
     sb = Switchbox(width,demands)
+
     if routing_method == 'HorizontalFirst':
         HorizontalFirst(sb)
 
-    if routing_method == 'Hadlocks':
+    elif routing_method == 'Hadlocks':
         Hadlocks(sb)
 
-    if routing_method == 'RandomHadlocks':
+    elif routing_method == 'RandomHadlocks':
         RandomHadlocks(sb)
+
+    elif routing_method == 'SimulatedAnnealing':
+        SimAnnealing(sb)
     
+    else:
+        
+        raise Exception("Invalid Routing Method")    
     # Return switch box for further analysis
     return sb
 
@@ -48,10 +56,11 @@ def routeTestBatch(width,routing_method, routeback, common_nets, max_demands, it
             
             # For a given number of demands, iterate a certain number of times
             demands = []
-            for d in range(0,number_demands):
-                # Generate the appropriate number of demands
+            demands = genDemands(width,number_demands,routeback,common_nets)
+            # for d in range(0,number_demands):
+            #     # Generate the appropriate number of demands
                 
-                demands.append(genDemand(width,routeback,common_nets,demands))
+            #     demands.append(genDemand(width,routeback,common_nets,demands))
             
             sb = Switchbox(width,demands)
             if routing_method == 'HorizontalFirst':
@@ -91,12 +100,12 @@ def routeTestBatch(width,routing_method, routeback, common_nets, max_demands, it
         percent_results.append(percentage)
         print("For " + str(i+1) + " demands, success -> " + str(r) + "/" + str(iterations) + " (" + str(percentage) + "%)")
     
-    plt.plot(number_of_demands,percent_results)
-    plt.xlabel("Number of demands")
-    plt.ylabel("Success rate (%)")
-    plt.title(f"{width}x{width} SB using {routing_method} routing algorithm")
-    plt.xticks(range(1,max(number_of_demands)+1,1))
-    plt.show()
+    # plt.plot(number_of_demands,percent_results)
+    # plt.xlabel("Number of demands")
+    # plt.ylabel("Success rate (%)")
+    # plt.title(f"{width}x{width} SB using {routing_method} routing algorithm")
+    # plt.xticks(range(1,max(number_of_demands)+1,1))
+    # plt.show()
     return sb
 
 ##########################################
@@ -104,7 +113,7 @@ def routeTestBatch(width,routing_method, routeback, common_nets, max_demands, it
 # routeback -> whether the two nodes can be on the same side
 # common_nets -> whether any two nodes in a set (prev demands passed as demands) can be the same
 def genDemand(width,routeback,common_nets,demands):
-
+    
     done = False
     
     while done == False:
@@ -131,6 +140,7 @@ def genDemand(width,routeback,common_nets,demands):
 #################################
 # Generate a random node
 def genDest(width):
+    
     i=0
     i = random.randint(0,3)
    
@@ -146,4 +156,53 @@ def genDest(width):
     i = random.randint(1,width-2)
     
     return(pole,i)
+
+
+def genDemands(width,number_of_demands,routeback,common_nets):
+    demands = []
+    selection = []
+    # 0,width or 1,width-1 depending on if using corner inputs
+    for i in range(1,width-1):
+        selection.append(('N',i))
+        selection.append(('E',i))
+        selection.append(('S',i))
+        selection.append(('W',i))
+        
+    for iteration in range(0,number_of_demands):
+        if len(selection)<=1:
+            raise Exception("Failed to create demands")
+        done = False
+        while done == False:
+            done = True
+            r1 = -1
+            r2 = -1
+            while r1==r2:
+                r1 = random.randint(0,len(selection)-1)
+                r2 = random.randint(0,len(selection)-1)
+            print(f"r1={r1},r2={r2},sel_len={len(selection)}    ")
+            # Discard if routeback is false and both nodes are same side
+            if routeback==False:
+                if selection[r1][0] == selection[r2][0]:
+                    done = False
+                    continue
+
+            if r1>r2:
+                demand = ((selection[r1],selection[r2]))
+            else:
+                demand = ((selection[r2],selection[r1]))
+
+            if demand in demands:
+                done = False
+                continue
+
+            if common_nets==False:
+                if r1 > r2:
+                    selection.pop(r1)
+                    selection.pop(r2)
+                else:
+                    selection.pop(r2)
+                    selection.pop(r1)
+
+        demands.append(demand)
+    return demands
 
