@@ -136,7 +136,7 @@ def RandomHadlocks(sb):
             if success_counter>len(best_route):
                 best_route = sb.routes.copy()
         i += 1
-        if show_progressbar:    print(sol)
+        if show_progressbar:    
             print(f"Failed after {i} attempt(s)")
         
     return success_counter
