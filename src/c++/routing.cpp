@@ -2,6 +2,8 @@
 #include <vector>
 #include <algorithm>    // std::reverse
 #include <stdexcept>
+#include <fstream>
+
 
 #define TRUE 1
 #define FALSE 0
@@ -145,7 +147,7 @@ class SB{
                 }
             }
             return TRUE;
-        }
+        };
 
         // bool checkTurn(Edge testedge, RouteID id){
         //     Edge curr_edge;
@@ -181,7 +183,30 @@ class SB{
                 n = Node(0,t.val);
             }
             return n;
-        }
+        };
+
+        void parseDemands(){
+            std::ifstream indata;
+            indata.open("demands.txt");
+            if(!indata) { // file couldn't be opened
+                exit(1);
+            }
+            Terminal src,dest;
+            char src_dir;
+            int src_val;
+            char dest_dir;
+            int dest_val;
+            
+            while ( !indata.eof() ){
+                indata >> src_dir;
+                indata >> src_val;
+                indata >> dest_dir;
+                indata >> dest_val;
+                src = Terminal(src_dir,src_val);
+                dest = Terminal(dest_dir,dest_val);
+                demands.push_back(RouteID(src,dest));
+            }            
+        };
 };
 
 
@@ -313,19 +338,18 @@ Route refineRoute(Route curr_route, SB &sb){
 
 
 
-int HadlocksShortestPath(SB &sb){
+int Hadlocks(SB &sb){
     int width = sb.width;
     for (int i=0;i<sb.demands.size();i++){
         
         std::cout << "Routing ";
         sb.demands[i].print();
+
         RouteID demand_id = sb.demands[i]; 
         std::vector<Node> visited, p_stack, n_stack, route, q_pos;
         Node u_node = sb.getNodeFromTerminal(demand_id.src);
         Node dest = sb.getNodeFromTerminal(demand_id.dest);
-        // u_node.print();
-        // dest.print();
-        // std::cout << "\n";
+    
         route.push_back(u_node);
         while(u_node != dest){
             visited.push_back(u_node);
@@ -366,20 +390,22 @@ int HadlocksShortestPath(SB &sb){
 int main(){
 
     SB sb = SB(16);
-    Terminal t = Terminal('E',14);
-    Terminal s = Terminal('S',14);
-    Terminal j = Terminal('S',15);
-    Terminal k = Terminal('S',8);
-    Node n = sb.getNodeFromTerminal(s);
+    // Terminal t = Terminal('E',14);
+    // Terminal s = Terminal('S',14);
+    // Terminal j = Terminal('S',15);
+    // Terminal k = Terminal('S',8);
+    // Node n = sb.getNodeFromTerminal(s);
     
-    RouteID id = RouteID(t,s);
-    RouteID id2 = RouteID(j,k);
-    std::vector<RouteID> demands;
-    demands.push_back(id);
-    demands.push_back(id2);
-    sb.setDemands(demands);
-    HadlocksShortestPath(sb);
+    // RouteID id = RouteID(t,s);
+    // RouteID id2 = RouteID(j,k);
+    // std::vector<RouteID> demands;
+    // demands.push_back(id);
+    // demands.push_back(id2);
+    // sb.setDemands(demands);
+    sb.parseDemands();
+    Hadlocks(sb);
     std::cout << sb.routes.size() << " routes routed!\n";
+    
     // // if (id==id2){
     // //     std::cout << "TRUE";
     // // }
