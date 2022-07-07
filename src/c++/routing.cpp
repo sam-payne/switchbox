@@ -3,6 +3,7 @@
 #include <algorithm>    // std::reverse
 #include <stdexcept>
 #include <fstream>
+#include <math.h>       /* exp */
 
 
 #define TRUE 1
@@ -36,7 +37,7 @@ struct RouteID{
     {
         return ((src==x.src && dest==x.dest)||(src==x.dest && dest==x.src));
     };
-    void print(){std::cout << src.dir << src.val << " to " << dest.dir << dest.val << "\n";}
+    void print(){std::cout << "('" << src.dir << "'," << src.val << ") to ('" << dest.dir << "'," << dest.val << ")\n";}
 };
 
 struct Node{
@@ -114,6 +115,11 @@ class SB{
             width = width_;
             demands = demands_;
         };
+
+        void resetSB(){
+            routes.clear();
+            used_edges.clear();
+        };
         int setDemands(std::vector<RouteID> demands_){
             demands = demands_;
         };
@@ -131,6 +137,32 @@ class SB{
         bool checkTurn(Node src, Node dest, RouteID id){
             Edge testedge = Edge(src,dest);
             Edge curr_edge;
+
+            if(src==dest){
+                return FALSE;
+            }
+            // Check if dest off the grid
+            if((dest.x>width-1)||(dest.x<0)){
+                return FALSE;
+            }
+            if((dest.y>width-1)||(dest.y<0)){
+                return FALSE;
+            }
+
+            // Check only vary by maximum of one
+            if((dest.y-src.y > 1)||(dest.y-src.y < -1)){
+                return FALSE;
+            }
+
+            if((dest.x-src.x > 1)||(dest.x-src.x < -1)){
+                return FALSE;
+            }
+
+            // Check only coordinate of them varys
+            if((dest.x-src.x != 0) && (dest.y-src.y != 0)){
+                return FALSE;
+            }            
+
             for (int i=0;i<routes.size();i++){
                
                 
@@ -140,7 +172,7 @@ class SB{
                 std::vector<Node> curr_route = routes[i].nodes;
                 for (int j=0;j<curr_route.size()-1;j++){
                     curr_edge = Edge(curr_route[j],curr_route[j+1]);
-                    
+                                        
                     if (testedge==curr_edge){
                         return FALSE;
                     }   
@@ -185,9 +217,9 @@ class SB{
             return n;
         };
 
-        void parseDemands(){
+        void parseDemands(std::string filepath){
             std::ifstream indata;
-            indata.open("demands.txt");
+            indata.open(filepath.c_str());
             if(!indata) { // file couldn't be opened
                 exit(1);
             }
@@ -207,6 +239,33 @@ class SB{
                 demands.push_back(RouteID(src,dest));
             }            
         };
+
+        void exportData(){
+            // std::ofstream routefile;
+            // routefile.open("sb_routes.txt");
+            std::freopen("sb_routes.txt","w",stdout);
+            for (int i=0;i<routes.size();i++){
+                routes[i].id.print();
+                routes[i].print();
+            }
+            
+        };
+
+        int getRouteSuccess(){
+            return routes.size();
+        };
+
+        int getTotalRouteLength(){
+            int total = 0;
+            for (int i = 0; i < routes.size(); i++)
+            {
+                total += routes[i].nodes.size()-1;
+            }
+            return total;
+        }
+
+        
+
 };
 
 
@@ -242,7 +301,7 @@ std::vector<Node> getQNegativeNeighbours(Node node, Node dest_node, int width, s
         valid = TRUE;
         
         for (int j=0;j<visited.size();j++){
-            if (neighbours_temp[i] == visited[i]){valid = FALSE;}
+            if (neighbours_temp[i] == visited[j]){valid = FALSE;}
         }
         if (sb.checkTurn(node,neighbours_temp[i],routeid) == FALSE){
             valid = FALSE;
@@ -326,7 +385,7 @@ Route refineRoute(Route curr_route, SB &sb){
     Node curr_node = old_route[old_route.size()-1];
     new_route.push_back(curr_node);
     for (int i=old_route.size()-2;i>-1;i--){
-        if (sb.checkTurn(curr_node,old_route[i],curr_route.id)){
+       if (sb.checkTurn(curr_node,old_route[i],curr_route.id)){
             curr_node = old_route[i];
             new_route.push_back(curr_node);
         }
@@ -342,14 +401,14 @@ int Hadlocks(SB &sb){
     int width = sb.width;
     for (int i=0;i<sb.demands.size();i++){
         
-        std::cout << "Routing ";
-        sb.demands[i].print();
+        //std::cout << "Routing ";
+        //sb.demands[i].print();
 
         RouteID demand_id = sb.demands[i]; 
         std::vector<Node> visited, p_stack, n_stack, route, q_pos;
         Node u_node = sb.getNodeFromTerminal(demand_id.src);
         Node dest = sb.getNodeFromTerminal(demand_id.dest);
-    
+        bool valid_route = TRUE;
         route.push_back(u_node);
         while(u_node != dest){
             visited.push_back(u_node);
@@ -360,9 +419,10 @@ int Hadlocks(SB &sb){
             if (q_pos.size() == 0){
                 if(p_stack.size() == 0){
                     if(n_stack.size() == 0){
-                        std::cout << "Error routing ";
-                        demand_id.print();
-                        return -1;
+                        //std::cout << "Error routing ";
+                        valid_route = FALSE;
+                        //demand_id.print();
+                        break;
                     }
                     else{
                         p_stack = n_stack;
@@ -377,52 +437,115 @@ int Hadlocks(SB &sb){
 
             route.push_back(u_node);
         }
-        Route route_struct = Route(demand_id,route); 
-        route_struct = refineRoute(route_struct,sb);
-        // route_struct.print();
-        sb.addRoute(route_struct);
+        if (valid_route){
+            Route route_struct = Route(demand_id,route); 
+            route_struct = refineRoute(route_struct,sb);
+            // route_struct.print();
+            sb.addRoute(route_struct);
+        }
+        visited.clear();
+        p_stack.clear();
+        n_stack.clear();
+        route.clear();
+        q_pos.clear();
     }
-    
-    
-    
+        
+}
+
+// Swap randomly two elements in a list
+int RandomSwap(std::vector<RouteID> &list){
+    if (list.size() == 0){
+        return 1;
+    }
+    int r1=0,r2=0;
+    while(r1==r2){
+        r1 = (std::rand() % list.size());
+        r2 = (std::rand() % list.size());
+    }
+    RouteID temp = list[r1];
+    list[r1] = list[r2];
+    list[r2] = temp;
+
+}
+
+int SimAnnealing(SB &sb){
+    std::vector<Route> sol;
+    int E=0, E_new=0;
+    int deltaE = 0;
+    int R=0, R_new=0;
+    int M=500;
+    float alpha = 0.98;
+    int k=0;
+    float boltzmann = 0;
+    float T = 100;
+
+    Hadlocks(sb);
+    R = sb.getRouteSuccess();
+    E = sb.getTotalRouteLength();
+    sol = sb.routes;
+
+    while(k<M){
+        std::cout << "Iteration " << k << " T= " << T << " success= "<< R << " E= " << E << "\n";
+        if(T<2){break;}
+        sb.resetSB();
+        RandomSwap(sb.demands);
+        Hadlocks(sb);
+        R_new = sb.getRouteSuccess();
+        E_new = sb.getTotalRouteLength();
+
+        if(R_new>R){
+            sol = sb.routes;
+            R = R_new;
+            E = E_new;
+            T = T*alpha;
+        }
+
+        else if(R_new==R){
+            if(E_new<E){
+                sol = sb.routes;
+                R = R_new;
+                E = E_new;
+                T = T*alpha;
+            }
+            else{
+                deltaE = E_new-E;
+                boltzmann = exp(-deltaE/T);
+                if(boltzmann>((float) rand()/RAND_MAX)){
+                    sol = sb.routes;
+                    R = R_new;
+                    E = E_new;
+                    T = T*alpha;
+                }
+            }
+        }
+        k++;
+    }
+    sb.resetSB();
+    sb.routes = sol;
+    if (sb.routes.size()==sb.demands.size()){
+        return TRUE;
+    }
+    else{
+        return FALSE;
+    }
+}
+
+int SB_Route(int width, std::string demands_filepath){
+    SB sb = SB(width);
+    sb.parseDemands(demands_filepath);
+    Hadlocks(sb);
+    sb.exportData();
+
 }
 
 int main(){
 
-    SB sb = SB(16);
-    // Terminal t = Terminal('E',14);
-    // Terminal s = Terminal('S',14);
-    // Terminal j = Terminal('S',15);
-    // Terminal k = Terminal('S',8);
-    // Node n = sb.getNodeFromTerminal(s);
-    
-    // RouteID id = RouteID(t,s);
-    // RouteID id2 = RouteID(j,k);
-    // std::vector<RouteID> demands;
-    // demands.push_back(id);
-    // demands.push_back(id2);
-    // sb.setDemands(demands);
-    sb.parseDemands();
-    Hadlocks(sb);
-    std::cout << sb.routes.size() << " routes routed!\n";
-    
-    // // if (id==id2){
-    // //     std::cout << "TRUE";
-    // // }
-    // // else{
-    // //     std::cout << "FALSE";
-    // // }
-
-    // SB sb = SB(8);  
-    // std::vector<Node> visited;
-    // std::vector<Node> results_neg, results_pos;
-    // results_neg = getQNegativeNeighbours(Node(0,0),Node(10,10),12,visited,sb);
-    // results_pos = getQPositiveNeighbours(Node(0,0),Node(10,10),12,visited,sb);
-   
-    // std::cout << results_pos.size();
-    // Node output = unstack(results_pos);
-    // output.print();
-    // std::cout << (results_pos.size());
+    // SB_Route(32,"demands.txt");
+    SB sb = SB(8);
+    sb.parseDemands("demands.txt");
+    SimAnnealing(sb);
+    std::cout << sb.getRouteSuccess() << std::endl;
+    std::cout << sb.getTotalRouteLength();
     
     
 }
