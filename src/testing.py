@@ -88,6 +88,10 @@ def routeTestBatch(width,routing_method, routeback, common_nets, max_demands, it
                 #     #print(getAllStats(sb))
                 #     #drawSB(sb)
                 #     break
+
+            if routing_method == "SimulatedAnnealing":
+                if SimAnnealing(sb) == True:
+                    success_counter += 1
             
             completeness = 100*((number_demands*iterations+i+1)/((max_demands+1)*iterations))         
             progress(completeness)
@@ -179,7 +183,7 @@ def genDemands(width,number_of_demands,routeback,common_nets):
             while r1==r2:
                 r1 = random.randint(0,len(selection)-1)
                 r2 = random.randint(0,len(selection)-1)
-            print(f"r1={r1},r2={r2},sel_len={len(selection)}    ")
+            #print(f"r1={r1},r2={r2},sel_len={len(selection)}    ")
             # Discard if routeback is false and both nodes are same side
             if routeback==False:
                 if selection[r1][0] == selection[r2][0]:
@@ -205,4 +209,57 @@ def genDemands(width,number_of_demands,routeback,common_nets):
 
         demands.append(demand)
     return demands
+
+def ExportGenDemands(width,number_of_demands,routeback,common_nets):
+    demands = []
+    selection = []
+    f = open("demands.txt", "w")
+    f.close()
+    # 0,width or 1,width-1 depending on if using corner inputs
+    for i in range(1,width-1):
+        selection.append(('N',i))
+        selection.append(('E',i))
+        selection.append(('S',i))
+        selection.append(('W',i))
+        
+    for iteration in range(0,number_of_demands):
+        if len(selection)<=1:
+            raise Exception("Failed to create demands")
+        done = False
+        while done == False:
+            done = True
+            r1 = -1
+            r2 = -1
+            while r1==r2:
+                r1 = random.randint(0,len(selection)-1)
+                r2 = random.randint(0,len(selection)-1)
+            #print(f"r1={r1},r2={r2},sel_len={len(selection)}    ")
+            # Discard if routeback is false and both nodes are same side
+            if routeback==False:
+                if selection[r1][0] == selection[r2][0]:
+                    done = False
+                    continue
+
+            if r1>r2:
+                demand = ((selection[r1],selection[r2]))
+            else:
+                demand = ((selection[r2],selection[r1]))
+
+            if demand in demands:
+                done = False
+                continue
+
+            if common_nets==False:
+                if r1 > r2:
+                    selection.pop(r1)
+                    selection.pop(r2)
+                else:
+                    selection.pop(r2)
+                    selection.pop(r1)
+        f = open("demands.txt",'a')
+        f.write(demand[0][0] + '\t')
+        f.write(str(demand[0][1]) + '\t')
+        f.write(demand[1][0] + '\t')
+        f.write(str(demand[1][1]) + '\n')
+    f.close()
 

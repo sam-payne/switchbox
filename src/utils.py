@@ -1,5 +1,5 @@
 import sys
-
+import ast
 
 global show_progressbar 
 show_progressbar = False
@@ -48,6 +48,28 @@ def parseDemands(input_file):
             demand = ((src[0],int(src[1])),(dest[0],int(dest[1])))
             demands.append(demand)
     return demands
+
+def parseRoutes(input_file):
+    routes = []
+    curr_route = []
+    src = ''
+    dest = ''
+    with open(input_file,"r") as f:
+        for count,line in enumerate(f):
+            if ('to' in line and count != 0):
+                curr_route.append(ast.literal_eval(dest))
+                routes.append(curr_route)
+            if 'to' in line:
+                src = line.split(' to ')[0]
+                dest = line.split(' to ')[1].split('\n')[0]
+                
+                curr_route = []
+                curr_route.append(ast.literal_eval(src))
+            elif count != 0:
+                curr_route.append(ast.literal_eval((line.split('\n')[0])))
+        curr_route.append(ast.literal_eval(dest))
+        routes.append(curr_route)
+    return routes
 
 
 def startprogress(title):
