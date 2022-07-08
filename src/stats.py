@@ -41,8 +41,9 @@ def getRouteEfficiency(sb):
         id = str(r[0]) + "<->" + str(r[-1])
         percent = round(100*(manhatten/length),2)
         report += "For route " + id + ", length = " + str(length) + " compared to possible " + str(manhatten) + " (" + str(percent) + "%)\n"
+    report += f"\nTotal length = {total_len}\n"    
     overall_percent = round(100*total_man/total_len,2)
-    report += ("\nOverall Efficiency = " + str(overall_percent) + "%\n")
+    report += ("Overall Efficiency = " + str(overall_percent) + "%\n")
     report += "********************************\n\n"
     return report
 
