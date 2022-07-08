@@ -338,7 +338,7 @@ std::vector<Node> getQPositiveNeighbours(Node node, Node dest_node, int width, s
         valid = TRUE;
         
         for (int j=0;j<visited.size();j++){
-            if (neighbours_temp[i] == visited[i]){valid = FALSE;}
+            if (neighbours_temp[i] == visited[j]){valid = FALSE;}
         }
         if (sb.checkTurn(node,neighbours_temp[i],routeid) == FALSE){
             valid = FALSE;
@@ -474,7 +474,7 @@ int SimAnnealing(SB &sb){
     int deltaE = 0;
     int R=0, R_new=0;
     int M=500;
-    float alpha = 0.98;
+    float alpha = 0.92;
     int k=0;
     float boltzmann = 0;
     float T = 100;
@@ -541,7 +541,7 @@ int SB_Route(int width, std::string demands_filepath){
 int main(){
 
     // SB_Route(32,"demands.txt");
-    SB sb = SB(8);
+    SB sb = SB(16);
     sb.parseDemands("demands.txt");
     SimAnnealing(sb);
     std::cout << sb.getRouteSuccess() << std::endl;
