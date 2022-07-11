@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <math.h>       /* exp */
+#include "cxxopts.hpp"
 
 
 #define TRUE 1
@@ -268,6 +269,27 @@ class SB{
 
 };
 
+int getTotalManhatten(SB &sb){
+    int total_distance=0;
+    int diffx, diffy;
+    for (int i = 0; i < sb.demands.size(); i++)
+    {   
+        Node a = sb.getNodeFromTerminal(sb.demands[i].src);
+        Node b = sb.getNodeFromTerminal(sb.demands[i].dest);
+    
+        if(a.x > b.x)
+            diffx = a.x - b.x;
+        else
+            diffx = b.x - a.x;
+        if (a.y > b.y)
+            diffy = a.y - b.y;
+        else
+            diffy = b.y - a.y;
+        total_distance += (diffx + diffy);
+    }
+    return total_distance;    
+}
+
 
 std::vector<Node> getQNegativeNeighbours(Node node, Node dest_node, int width, std::vector<Node> &visited, SB &sb, RouteID routeid){
     std::vector<Node> neighbours_temp, neighbours;
@@ -485,7 +507,10 @@ int SimAnnealing(SB &sb){
     sol = sb.routes;
 
     while(k<M){
-        std::cout << "Iteration " << k << " T= " << T << " success= "<< R << " E= " << E << "\n";
+         std::cout << "Iteration " << k << " T= " << T << " success= "<< R << " E= " << E << "\n";
+        if((R==sb.demands.size()) && (E<=(float)getTotalManhatten(sb)/0.95))
+            break;
+       
         if(T<2){break;}
         sb.resetSB();
         RandomSwap(sb.demands);
@@ -538,14 +563,89 @@ int SB_Route(int width, std::string demands_filepath){
 
 }
 
-int main(){
+std::vector<RouteID> parseDemands(std::vector<std::string> input_){
+    char src_dir,dest_dir;
+    char src_val[2],dest_val[2];
+    std::vector<RouteID> demands;
+    for (int j = 0; j < input_.size(); j++)
+    {
+        std::string line = input_[j];
+        int length = line.size();
+        int i=0;
+        src_dir = line[i];
+        i++;
+        while(line[i]!=','){
+            int k=0;
+            src_val[k++] = line[i];
+            i++;
+        }
+        i++;
+        dest_dir = line[i];
+        while(line[i]!=line.at(length-1)){
+            int k=0;
+            dest_val[k++] = line[i];
+            i++;
+        }
+        Terminal src = Terminal(src_dir,atoi(src_val));
+        Terminal dest = Terminal(dest_dir,atoi(dest_val));
+        demands.push_back(RouteID(src,dest));
+    }
+    return demands;  
+}
 
-    // SB_Route(32,"demands.txt");
-    SB sb = SB(16);
-    sb.parseDemands("demands.txt");
-    SimAnnealing(sb);
-    std::cout << sb.getRouteSuccess() << std::endl;
-    std::cout << sb.getTotalRouteLength();
+int main(int argc, char *argv[]){
+    cxxopts::Options options("switchbox","A brief description");
+    options.add_options()
+        ("n,iterations","Max number of iterations of algorithm")
+        ("w,width","Width of switchbox")
+        ("t,target","Target performance (ie 0.9)")
+        ("A,alpha","Alpha value (default=0.95")
+        ("d,demands","List of demands as string",cxxopts::value<std::vector<std::string>>())
+        ("h,help","Print usage");
+    //options.parse_positional({"demands"});
+
+    cxxopts::ParseResult results;
+    try {
+        results = options.parse(argc, argv);
+    } catch (const cxxopts::OptionParseException &x) {
+        std::cerr << "dog: " << x.what() << '\n';
+        std::cerr << "usage: dog [options] <input_file> ...\n";
+        return EXIT_FAILURE;
+    }
     
+    if (results.count("help"))
+    {
+      std::cout << options.help() << std::endl;
+      exit(0);
+    }
+
+     if (!results.count("width")) {
+        std::cerr << "Must specify switchbox width with -w";
+        return 1;
+    }
+    
+    int N=200;
+    float target=0.95;
+    float alpha=0.95;
+    int width = 8;
+    width = results["width"].as<int>();
+    if(results.count("iterations")){N = results["iterations"].as<int>();}
+    if(results.count("target")){target = results["target"].as<float>();}
+    if(results.count("alpha")){alpha = results["alpha"].as<float>();}
+    
+    std::vector<RouteID> demands = parseDemands(results["demands"].as<std::vector<std::string>>());
+    
+    SB sb = SB(width);
+    
+    for (int i = 0; i < demands.size(); i++)
+    {
+        demands[i].print();
+        std::cout << "\n";
+    }
+    
+    // SimAnnealing(sb);
+    // std::cout << sb.getRouteSuccess() << std::endl;
+    // std::cout << sb.getTotalRouteLength();
+    // sb.exportData();
     
 }
