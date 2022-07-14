@@ -5,7 +5,7 @@ import os
 
 def getDemands(line):
     demands = []
-    print(line)
+    # print(line)
     for d in line:
 
         demand = list(d.split(" "))
@@ -15,9 +15,12 @@ def getDemands(line):
         elif len(demand)>2:
             # Remove duplicates
             demand = list(set(demand))
-            for i in range(1,len(demand)):
-                demands.append(demand[0] + ',' + demand[i] + ' ')
-    print(demands)
+            for i in range(0,len(demand)):
+                for j in range(i,len(demand)):
+                    if i==j:
+                        continue
+                    demands.append(demand[i] + ',' + demand[j] + ' ')
+    # print(demands)
     return demands
 
      
@@ -25,9 +28,9 @@ def getDemands(line):
     
 def sb_route(
     width=50,
-    alpha=0.95,
+    alpha=0.9,
     iterations=500,
-    target=0.9,
+    target=0.8,
     demand_file='SB_database_sample.csv',
     ):
     curr_dir = os.path.abspath(os.path.dirname(__file__))
@@ -46,10 +49,13 @@ def sb_route(
                 line.pop(0)
                 xcord = line.pop(0)
                 ycord = line.pop(0)
+                sb_name = f"sb_x{xcord}_y{ycord}_routing.txt"
+                curr_cmd = cmd + ['-o',sb_name]
                 demands = (getDemands(line))
                 
+                
                 if demands:
-                    subprocess.call(cmd+demands)
+                    subprocess.call(curr_cmd+demands)
 
     
 
