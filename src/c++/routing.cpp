@@ -36,7 +36,7 @@ struct RouteID{
 
     bool operator==(const RouteID& x) const
     {
-        return ((src==x.src && dest==x.dest)||(src==x.dest && dest==x.src));
+        return (src==x.src || src==x.dest || dest==x.src || dest==x.dest);
     };
     void print(){std::cout << "('" << src.dir << "'," << src.val << ") to ('" << dest.dir << "'," << dest.val << ")\n";}
 };
