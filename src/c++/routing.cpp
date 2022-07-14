@@ -247,7 +247,13 @@ class SB{
                 indata >> src_val;
                 indata >> dest_dir;
                 indata >> dest_val;
+
+                if(src_val>width-1 || dest_val>width-1){
+                    throw std::runtime_error("Src/Dest exceeds SB width");
+                    exit(1);
+                }
                 src = Terminal(src_dir,src_val);
+                std::cout << src_dir << std::endl;
                 dest = Terminal(dest_dir,dest_val);
                 demands.push_back(RouteID(src,dest));
             }            
@@ -590,31 +596,38 @@ char capitalise(char a){
 }
 
 std::vector<RouteID> parseDemands(std::vector<std::string> input_){
-    char src_dir,dest_dir;
-    char src_val[4],dest_val[4];
+    
     std::vector<RouteID> demands;
     for (int j = 0; j < input_.size(); j+=2)
     {
+        char src_dir,dest_dir;
+       // char src_val[4],dest_val[4];
+        std::string src_val, dest_val;
         std::string src_string = input_[j];
         std::string dest_string = input_[j+1];
 
+
         src_dir = capitalise(src_string[0]);
-
-        int i=1;
-        while(src_string[i-1]!=src_string.at(src_string.size()-1)){
-            src_val[i-1] = src_string[i];
-            i++;
-        }
-        i=0;
+        src_val = src_string.substr(1,src_string.size()-1);
         dest_dir = capitalise(dest_string[0]);
-        i=1;
-        while(dest_string[i-1]!=dest_string.at(dest_string.size()-1)){
-            dest_val[i-1] = dest_string[i];
+        dest_val = dest_string.substr(1,dest_string.size()-1);
+        // int i=1;
+        // while(src_string[i-1]!=src_string.at(src_string.size()-1)){
+        //     src_val[i-1] = src_string[i];
+        //     i++;
+        // }
+        // i=0;
+        // dest_dir = capitalise(dest_string[0]);
+        // i=1;
+        // while(dest_string[i-1]!=dest_string.at(dest_string.size()-1)){
+        //     dest_val[i-1] = dest_string[i];
 
-            i++;
-        }
-        Terminal src = Terminal(src_dir,atoi(src_val));
-        Terminal dest = Terminal(dest_dir,atoi(dest_val));
+        //     i++;
+        // }
+        
+        Terminal src = Terminal(src_dir,atoi(src_val.c_str()));
+        Terminal dest = Terminal(dest_dir,atoi(dest_val.c_str()));
+        
         demands.push_back(RouteID(src,dest));
     }
     return demands;  
