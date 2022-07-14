@@ -216,7 +216,7 @@ class SB{
                 n = Node(0,t.val);
             }
             else{
-                throw std::runtime_error("Demand exceeded width"); 
+                throw std::runtime_error("Invalid direction"); 
             }
             return n;
         };
@@ -253,10 +253,11 @@ class SB{
             }            
         };
 
-        void exportData(){
+        void exportData(std::string filename){
             // std::ofstream routefile;
             // routefile.open("sb_routes.txt");
-            std::freopen("sb_routes.txt","w",stdout);
+            
+            std::freopen(filename.c_str(),"w",stdout);
             for (int i=0;i<routes.size();i++){
                 routes[i].id.print();
                 routes[i].print();
@@ -520,8 +521,8 @@ int SimAnnealing(SB &sb,int M_, float alpha_, float target_){
     sol = sb.routes;
 
     while(k<M){
-         std::cout << "Iteration " << k << " T= " << T << " success= "<< R << " E= " << E << "\n";
-        if((R==sb.demands.size()) && (E>=(float)getTotalManhatten(sb)/target_))
+        // std::cout << "Iteration " << k << " T= " << T << " success= "<< R << " E= " << E << "\n";
+        if((R==sb.demands.size()) && (E<=(float)getTotalManhatten(sb)/target_))
             break;
        
         if(T<2){break;}
@@ -568,12 +569,24 @@ int SimAnnealing(SB &sb,int M_, float alpha_, float target_){
     }
 }
 
-int SB_Route(int width, std::string demands_filepath){
-    SB sb = SB(width);
-    sb.parseDemands(demands_filepath);
-    Hadlocks(sb);
-    sb.exportData();
+// int sbRoute(int width, std::string demands_filepath){
+//     SB sb = SB(width);
+//     sb.parseDemands(demands_filepath);
+//     Hadlocks(sb);
+//     sb.exportData();
 
+// }
+
+char capitalise(char a){
+    if(a=='n')
+        return 'N';
+    if(a=='e')
+        return 'E';
+    if(a=='s')
+        return 'S';
+    if(a=='w')
+        return 'W';
+    return a;
 }
 
 std::vector<RouteID> parseDemands(std::vector<std::string> input_){
@@ -585,14 +598,15 @@ std::vector<RouteID> parseDemands(std::vector<std::string> input_){
         std::string src_string = input_[j];
         std::string dest_string = input_[j+1];
 
-        src_dir = src_string[0];
+        src_dir = capitalise(src_string[0]);
+
         int i=1;
         while(src_string[i-1]!=src_string.at(src_string.size()-1)){
             src_val[i-1] = src_string[i];
             i++;
         }
         i=0;
-        dest_dir = dest_string[0];
+        dest_dir = capitalise(dest_string[0]);
         i=1;
         while(dest_string[i-1]!=dest_string.at(dest_string.size()-1)){
             dest_val[i-1] = dest_string[i];
@@ -606,14 +620,66 @@ std::vector<RouteID> parseDemands(std::vector<std::string> input_){
     return demands;  
 }
 
+// std::vector<RouteID> parseDemands(std::string input_){
+//     std::stringstream ss(input_);
+//     std::vector<std::string> v;
+//     std::string value, subvalue;
+//     while (ss >> value)
+//     {   
+//         getline(value,subvalue,',');
+//         v.push_back(value);
+//         std::cout << value << std::endl;
+
+//     if (ss.peek() == ',' || ss.peek() == ' ')
+//         ss.ignore();
+//     }
+//     char src_dir,dest_dir;
+//     char src_val[4],dest_val[4];
+//     std::vector<RouteID> demands;
+//     for (int j = 0; j < v.size(); j+=2)
+//     {
+//         std::string src_string = v[j];
+//         std::string dest_string = v[j+1];
+
+//         src_dir = src_string[0];
+//         int i=1;
+//         while(src_string[i-1]!=src_string.at(src_string.size()-1)){
+//             src_val[i-1] = src_string[i];
+//             i++;
+//         }
+//         i=0;
+//         dest_dir = dest_string[0];
+//         i=1;
+//         while(dest_string[i-1]!=dest_string.at(dest_string.size()-1)){
+//             dest_val[i-1] = dest_string[i];
+
+//             i++;
+//         }
+//         Terminal src = Terminal(src_dir,atoi(src_val));
+//         Terminal dest = Terminal(dest_dir,atoi(dest_val));
+//         demands.push_back(RouteID(src,dest));
+//     }
+//     return demands;  
+// }
+
 int main(int argc, char *argv[]){
+
+    // std::vector<RouteID> input;
+    // std::string in = "N3,S2 W8,N3";
+    // input = parseDemands(in);
+    // for (int i = 0; i < input.size(); i++)
+    // {
+    //     input[i].print();
+    // }
+    
     cxxopts::Options options("switchbox","Routes a switchbox using Simulated Annealing and the Hadlocks shortest path algorithm, saves routes in sb_routes.txt");
     options.add_options()
-        ("n,iterations","Max number of iterations of algorithm")
+        ("n,iterations","Max number of iterations of algorithm",cxxopts::value<int>()->default_value("500"))
         ("w,width","Width of switchbox",cxxopts::value<int>()->default_value("8"))
         ("t,target","Target performance",cxxopts::value<float>()->default_value("0.95"))
-        ("A,alpha","Alpha value",cxxopts::value<float>()->default_value("0.95"))
+        ("a,alpha","Alpha value",cxxopts::value<float>()->default_value("0.95"))
         ("d,demands","List of demands as string",cxxopts::value<std::vector<std::string>>())
+        ("o,output","Output file path for routing results",cxxopts::value<std::string>()->default_value("sb_routes.txt"))
         ("h,help","Print usage");
     options.parse_positional({"demands"});
 
@@ -647,26 +713,33 @@ int main(int argc, char *argv[]){
     float target;
     float alpha;
     int width;
+    std::string output = "sb_out.txt";
     width = results["width"].as<int>();
     if(results.count("iterations")){N = results["iterations"].as<int>();}
     if(results.count("target")){target = results["target"].as<float>();}
     if(results.count("alpha")){alpha = results["alpha"].as<float>();}
+    if(results.count("output")){output = results["output"].as<std::string>();}
     // std::vector<std::string> demands = results["demands"].as<std::vector<std::string>>();
     std::vector<RouteID> demands = parseDemands(results["demands"].as<std::vector<std::string>>());
     
     SB sb = SB(width);
     sb.addDemands(demands);
-    
+    std::cout << "Now routing: \n";
     for (int i = 0; i < demands.size(); i++)
     {
         demands[i].print();
         // std::cout << demands[i];
-        std::cout << "\n";
     }
     
     SimAnnealing(sb,N,alpha,target);
-    std::cout << "Successfully routed " << sb.getRouteSuccess() << "/" << sb.demands.size() << std::endl;
+    if(sb.getRouteSuccess() == sb.demands.size()){
+        std::cout << "\nSuccess!\n";
+    }
+    else{
+        std::cout << "\nRouting failed!\n";
+    }
+    std::cout << "Routed " << sb.getRouteSuccess() << "/" << sb.demands.size() << std::endl;
     std::cout << "Total route length= " << sb.getTotalRouteLength() << std::endl;
-    sb.exportData();
+    sb.exportData(output);
     
 }
