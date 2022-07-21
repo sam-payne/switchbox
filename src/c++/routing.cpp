@@ -10,6 +10,7 @@
 #define TRUE 1
 #define FALSE 0
 
+// Represent a terminal node (ie. 'N3')
 struct Terminal{
     char dir;
     int val;
@@ -17,14 +18,15 @@ struct Terminal{
     Terminal(char d,int v){
         dir = d;
         val = v;
-    }; 
-    
+    };     
     bool operator==(const Terminal& x) const
     {
         return (dir == x.dir && val == x.val);
-    };      
+    };
+       
 };
 
+// RouteID contains the source and destination terminals (ie. 'N3<->S1')
 struct RouteID{
     Terminal src;
     Terminal dest; 
@@ -33,7 +35,7 @@ struct RouteID{
         src = src_;
         dest = dest_;
     };
-
+    // Two routes are equal if either source or dest are equal (same net)
     bool operator==(const RouteID& x) const
     {
         return (src==x.src || src==x.dest || dest==x.src || dest==x.dest);
@@ -41,6 +43,7 @@ struct RouteID{
     void print(){std::cout << "('" << src.dir << "'," << src.val << ") to ('" << dest.dir << "'," << dest.val << ")\n";}
 };
 
+// A node with x and y coordinate
 struct Node{
     int x;
     int y;
@@ -61,6 +64,7 @@ struct Node{
     
 };
 
+// An edge comprising of two nodes, and a RouteID value to allow routes on same mesh to share an edge
 struct Edge{
     Node a;
     Node b;
@@ -75,6 +79,7 @@ struct Edge{
         b = b_;
         id = id_;
     };
+    // Edges are equal regardless of the order the nodes are represented
     bool operator==(const Edge& x) const
     {
         return ((a==x.a && b==x.b)||(b==x.a && a==x.b));
@@ -82,6 +87,7 @@ struct Edge{
     void print(){std::cout << "Edge: " << a.x << "," << a.y << "-" << b.x << "," << b.y << "\n";}
 };
 
+// A route has an ID and a vector of nodes
 struct Route{
     RouteID id;
     std::vector<Node> nodes;
@@ -97,17 +103,13 @@ struct Route{
     };
 };
 
-class SB{
-    // private:
-               
-        
-        
+// Class to represent the routing problem
+class SB{    
     public:
         std::vector<Route> routes;
-
         int width;
         std::vector<RouteID> demands;
-        std::vector<Edge> used_edges;
+
         SB(){};
         SB(int width_){
             width = width_;
@@ -119,7 +121,6 @@ class SB{
 
         void resetSB(){
             routes.clear();
-            used_edges.clear();
         };
         int setDemands(std::vector<RouteID> demands_){
             demands = demands_;
@@ -127,14 +128,8 @@ class SB{
         void addRoute(Route newr){
             routes.push_back(newr);
         }
-        int addEdge(Edge newedge){
-            for(int i=0;i<used_edges.size();i++){
-                if (newedge==used_edges[i]){
-                    return 1;
-                }
-            }
-            used_edges.push_back(newedge);
-        };
+
+        // Checks if a potential move down an edge is valid
         bool checkTurn(Node src, Node dest, RouteID id){
             Edge testedge = Edge(src,dest);
             Edge curr_edge;
@@ -150,7 +145,7 @@ class SB{
                 return FALSE;
             }
 
-            // Check only vary by maximum of one
+            // Check the two nodes only vary by maximum of one
             if((dest.y-src.y > 1)||(dest.y-src.y < -1)){
                 return FALSE;
             }
@@ -159,21 +154,20 @@ class SB{
                 return FALSE;
             }
 
-            // Check only coordinate of them varys
+            // Check only one coordinate of them varies
             if((dest.x-src.x != 0) && (dest.y-src.y != 0)){
                 return FALSE;
             }            
 
-            for (int i=0;i<routes.size();i++){
-               
-                
+            for (int i=0;i<routes.size();i++){              
+                // Move valid if of the same net
                 if (routes[i].id == id){
                     continue;
                 }
+                // Check if edge already appears in another route
                 std::vector<Node> curr_route = routes[i].nodes;
                 for (int j=0;j<curr_route.size()-1;j++){
-                    curr_edge = Edge(curr_route[j],curr_route[j+1]);
-                                        
+                    curr_edge = Edge(curr_route[j],curr_route[j+1]);                                        
                     if (testedge==curr_edge){
                         return FALSE;
                     }   
@@ -230,51 +224,65 @@ class SB{
             demands = demands_;
         }
 
-        void parseDemands(std::string filepath){
-            std::ifstream indata;
-            indata.open(filepath.c_str());
-            if(!indata) { // file couldn't be opened
-                exit(1);
-            }
-            Terminal src,dest;
-            char src_dir;
-            int src_val;
-            char dest_dir;
-            int dest_val;
+        // void parseDemands(std::string filepath){
+        //     std::ifstream indata;
+        //     indata.open(filepath.c_str());
+        //     if(!indata) { // file couldn't be opened
+        //         exit(1);
+        //     }
+        //     Terminal src,dest;
+        //     char src_dir;
+        //     int src_val;
+        //     char dest_dir;
+        //     int dest_val;
             
-            while ( !indata.eof() ){
-                indata >> src_dir;
-                indata >> src_val;
-                indata >> dest_dir;
-                indata >> dest_val;
+        //     while ( !indata.eof() ){
+        //         indata >> src_dir;
+        //         indata >> src_val;
+        //         indata >> dest_dir;
+        //         indata >> dest_val;
 
-                if(src_val>width-1 || dest_val>width-1){
-                    throw std::runtime_error("Src/Dest exceeds SB width");
-                    exit(1);
+        //         if(src_val>width-1 || dest_val>width-1){
+        //             throw std::runtime_error("Src/Dest exceeds SB width");
+        //             exit(1);
+        //         }
+        //         src = Terminal(src_dir,src_val);
+        //         std::cout << src_dir << std::endl;
+        //         dest = Terminal(dest_dir,dest_val);
+        //         demands.push_back(RouteID(src,dest));
+        //     }            
+        // };
+
+        void exportData(std::string filename,std::string sb_id){
+            std::ofstream routefile;
+            routefile.open(filename,std::ios_base::app);
+            std::string x_id = sb_id.substr(0,sb_id.find(','));
+            std::string y_id = sb_id.substr(sb_id.find(',')+1,sb_id.size()-sb_id.find(','));
+            
+            for (int i = 0; i < routes.size(); i++)
+            {
+                routefile << x_id << "," << y_id << ",";
+                Terminal src = routes[i].id.src;
+                Terminal dest = routes[i].id.dest;
+                routefile << src.dir << src.val << ',';
+                routefile << dest.dir << dest.val << ',';
+                for (int j = 0; j < routes[i].nodes.size(); j++)
+                {
+                    routefile << "'" << routes[i].nodes[j].x << ',' << routes[i].nodes[j].y << "'";
+                    if(j!=routes[i].nodes.size()-1)
+                        routefile << ',';
                 }
-                src = Terminal(src_dir,src_val);
-                std::cout << src_dir << std::endl;
-                dest = Terminal(dest_dir,dest_val);
-                demands.push_back(RouteID(src,dest));
-            }            
-        };
-
-        void exportData(std::string filename){
-            // std::ofstream routefile;
-            // routefile.open("sb_routes.txt");
-            
-            std::freopen(filename.c_str(),"w",stdout);
-            for (int i=0;i<routes.size();i++){
-                routes[i].id.print();
-                routes[i].print();
+                if(i!=routes.size()-1)
+                    routefile << "\n";
             }
-            
+            routefile.close();
         };
 
         int getRouteSuccess(){
             return routes.size();
         };
 
+        // Add up the total number of edges used by all routes
         int getTotalRouteLength(){
             int total = 0;
             for (int i = 0; i < routes.size(); i++)
@@ -283,11 +291,10 @@ class SB{
             }
             return total;
         }
-
-        
-
 };
 
+// Calculates the sum of all the Manhatten distance between terminals,
+// giving the total length of the optimal solution
 int getTotalManhatten(SB &sb){
     int total_distance=0;
     int diffx, diffy;
@@ -309,11 +316,10 @@ int getTotalManhatten(SB &sb){
     return total_distance;    
 }
 
-
+// From Hadlocks Algorthm: gets all possible moves which a 'Q-negative' - move away from destination
 std::vector<Node> getQNegativeNeighbours(Node node, Node dest_node, int width, std::vector<Node> &visited, SB &sb, RouteID routeid){
     std::vector<Node> neighbours_temp, neighbours;
-    // node.print();
-    // dest_node.print();
+
     if (dest_node.x > node.x){
         if (node.x-1 >= 0) {neighbours_temp.push_back(Node(node.x-1,node.y));}
     }
@@ -354,10 +360,10 @@ std::vector<Node> getQNegativeNeighbours(Node node, Node dest_node, int width, s
     return neighbours;
 };
 
+// From Hadlocks Algorthm: gets all possible moves which a 'Q-positive' - move towards from destination
 std::vector<Node> getQPositiveNeighbours(Node node, Node dest_node, int width, std::vector<Node> &visited, SB &sb, RouteID routeid){
     std::vector<Node> neighbours_temp, neighbours;
-    // node.print();
-    // dest_node.print();
+
     if (dest_node.x > node.x){
         neighbours_temp.push_back(Node(node.x+1,node.y));
     }
@@ -391,22 +397,26 @@ std::vector<Node> getQPositiveNeighbours(Node node, Node dest_node, int width, s
     return neighbours;
 };
 
+// From Hadlocks Algorthm: Stack a node onto a given stack
 int stack(std::vector<Node> &target_stack,Node input){
     target_stack.push_back(input);
 }
 
+// From Hadlocks Algorthm: Overload of stack function to accept a vector of nodes
 int stack(std::vector<Node> &target_stack,std::vector<Node> input){
     for (int i=0;i<input.size();i++){
         target_stack.push_back(input[i]);
     }
 }
 
+// From Hadlocks Algorthm: Unstack a node from a given stack
 Node unstack(std::vector<Node> &target_stack){
     Node output = target_stack.back();
     target_stack.pop_back();
     return output;
 }
 
+// From Hadlocks Algorthm: Ensure no previously visited nodes exist in a stack
 int removeVisitedFromStack(Node node,std::vector<Node> &p_stack,std::vector<Node> &n_stack){
     for (int i = 0; i < p_stack.size(); i++)
     {
@@ -420,6 +430,8 @@ int removeVisitedFromStack(Node node,std::vector<Node> &p_stack,std::vector<Node
     
 }
 
+// Look back at a route vector and remove any deadends and impossible nodes added as
+// artifacts of the algorithm
 Route refineRoute(Route curr_route, SB &sb){
     std::vector<Node> new_route, old_route;
     old_route = curr_route.nodes;
@@ -437,7 +449,7 @@ Route refineRoute(Route curr_route, SB &sb){
 }
 
 
-
+// The Hadlocks Algorithm, inspired by " "
 int Hadlocks(SB &sb){
     int width = sb.width;
     for (int i=0;i<sb.demands.size();i++){
@@ -460,9 +472,8 @@ int Hadlocks(SB &sb){
             if (q_pos.size() == 0){
                 if(p_stack.size() == 0){
                     if(n_stack.size() == 0){
-                        //std::cout << "Error routing ";
+                        // No move is possible, routing has failed
                         valid_route = FALSE;
-                        //demand_id.print();
                         break;
                     }
                     else{
@@ -494,7 +505,7 @@ int Hadlocks(SB &sb){
         
 }
 
-// Swap randomly two elements in a list
+// From Simulated Annealing: Swap randomly two elements in a list
 int RandomSwap(std::vector<RouteID> &list){
     if (list.size() == 0){
         return 1;
@@ -527,7 +538,7 @@ int SimAnnealing(SB &sb,int M_, float alpha_, float target_){
     sol = sb.routes;
 
     while(k<M){
-        // std::cout << "Iteration " << k << " T= " << T << " success= "<< R << " E= " << E << "\n";
+        std::cout << "Iteration " << k << " T= " << T << " success= "<< R << " E= " << E << "\n";
         if((R==sb.demands.size()) && (E<=(float)getTotalManhatten(sb)/target_))
             break;
        
@@ -595,8 +606,9 @@ char capitalise(char a){
     return a;
 }
 
-std::vector<RouteID> parseDemands(std::vector<std::string> input_){
-    
+// Take a vector of strings of demands, originating from the command line
+// and form a vector of RouteIDs
+std::vector<RouteID> parseDemands(std::vector<std::string> input_){    
     std::vector<RouteID> demands;
     for (int j = 0; j < input_.size(); j+=2)
     {
@@ -611,20 +623,7 @@ std::vector<RouteID> parseDemands(std::vector<std::string> input_){
         src_val = src_string.substr(1,src_string.size()-1);
         dest_dir = capitalise(dest_string[0]);
         dest_val = dest_string.substr(1,dest_string.size()-1);
-        // int i=1;
-        // while(src_string[i-1]!=src_string.at(src_string.size()-1)){
-        //     src_val[i-1] = src_string[i];
-        //     i++;
-        // }
-        // i=0;
-        // dest_dir = capitalise(dest_string[0]);
-        // i=1;
-        // while(dest_string[i-1]!=dest_string.at(dest_string.size()-1)){
-        //     dest_val[i-1] = dest_string[i];
-
-        //     i++;
-        // }
-        
+              
         Terminal src = Terminal(src_dir,atoi(src_val.c_str()));
         Terminal dest = Terminal(dest_dir,atoi(dest_val.c_str()));
         
@@ -677,14 +676,7 @@ std::vector<RouteID> parseDemands(std::vector<std::string> input_){
 
 int main(int argc, char *argv[]){
 
-    // std::vector<RouteID> input;
-    // std::string in = "N3,S2 W8,N3";
-    // input = parseDemands(in);
-    // for (int i = 0; i < input.size(); i++)
-    // {
-    //     input[i].print();
-    // }
-    
+  
     cxxopts::Options options("switchbox","Routes a switchbox using Simulated Annealing and the Hadlocks shortest path algorithm, saves routes in sb_routes.txt");
     options.add_options()
         ("n,iterations","Max number of iterations of algorithm",cxxopts::value<int>()->default_value("500"))
@@ -693,6 +685,7 @@ int main(int argc, char *argv[]){
         ("a,alpha","Alpha value",cxxopts::value<float>()->default_value("0.95"))
         ("d,demands","List of demands as string",cxxopts::value<std::vector<std::string>>())
         ("o,output","Output file path for routing results",cxxopts::value<std::string>()->default_value("sb_routes.txt"))
+        ("i,id","Switchbox ID",cxxopts::value<std::string>()->default_value("0,0"))
         ("h,help","Print usage");
     options.parse_positional({"demands"});
 
@@ -726,12 +719,14 @@ int main(int argc, char *argv[]){
     float target;
     float alpha;
     int width;
+    std::string sb_id;
     std::string output = "sb_out.txt";
     width = results["width"].as<int>();
     if(results.count("iterations")){N = results["iterations"].as<int>();}
     if(results.count("target")){target = results["target"].as<float>();}
     if(results.count("alpha")){alpha = results["alpha"].as<float>();}
     if(results.count("output")){output = results["output"].as<std::string>();}
+    if(results.count("id")){sb_id = results["id"].as<std::string>();}
     // std::vector<std::string> demands = results["demands"].as<std::vector<std::string>>();
     std::vector<RouteID> demands = parseDemands(results["demands"].as<std::vector<std::string>>());
     
@@ -753,6 +748,6 @@ int main(int argc, char *argv[]){
     }
     std::cout << "Routed " << sb.getRouteSuccess() << "/" << sb.demands.size() << std::endl;
     std::cout << "Total route length= " << sb.getTotalRouteLength() << std::endl;
-    sb.exportData(output);
-    
+    sb.exportData(output,sb_id);
+    return 0;
 }
