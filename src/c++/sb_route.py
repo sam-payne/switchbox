@@ -2,6 +2,7 @@
 import subprocess
 import csv
 import os
+import sys
 #########################################
 WIDTH=50                                # Switch box width
 ALPHA=0.95                              # Alpha parameter (default 0.95)    
@@ -77,5 +78,12 @@ def sb_route(
                     subprocess.run(curr_cmd+demands)
 
 if __name__ == "__main__":
+
+    # Check if c++ binary exists, otherwise compile it
+    curr_dir = os.path.abspath(os.path.dirname(__file__))
+    if not os.path.isfile(os.path.join(curr_dir,'./routing')):
+        make_progress = subprocess.Popen("make", shell=True, stdout=subprocess.PIPE, stderr=sys.stdout.fileno())
+        make_progress.wait()
+
     sb_route(width=WIDTH,alpha=ALPHA,iterations=ITERATIONS,target=TARGET,demand_file=DEMAND_FILE)  
 
