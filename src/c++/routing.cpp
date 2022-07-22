@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>    // std::reverse
 #include <stdexcept>
+#include <random>
 #include <fstream>
 #include <math.h>       /* exp */
 #include "cxxopts.hpp"
@@ -283,15 +284,17 @@ class SB{
         };
 
         // Add up the total number of edges used by all routes
-        int getTotalRouteLength(){
-            int total = 0;
-            for (int i = 0; i < routes.size(); i++)
-            {
-                total += routes[i].nodes.size()-1;
-            }
-            return total;
-        }
+        
 };
+
+int getTotalRouteLength(std::vector<Route> routes){
+    int total = 0;
+    for (int i = 0; i < routes.size(); i++)
+    {
+        total += routes[i].nodes.size()-1;
+    }
+    return total;
+}
 
 // Calculates the sum of all the Manhatten distance between terminals,
 // giving the total length of the optimal solution
@@ -505,6 +508,39 @@ int Hadlocks(SB &sb){
         
 }
 
+int RandomHadlocks(SB &sb,int M_, float target_){
+    std::vector<Route> best_solution;
+    int n=1,E=0,R=0,bestR=0,bestE=0;
+    while(n<M_){
+        //std::cout << "Iteration " << n;
+        std::shuffle(sb.demands.begin(),sb.demands.end(), std::default_random_engine(0));
+        Hadlocks(sb);    
+        R = sb.getRouteSuccess();
+        E = getTotalRouteLength(sb.routes);
+                
+        if (R>bestR){
+            best_solution=sb.routes;
+            bestR = best_solution.size();
+            bestE = getTotalRouteLength(best_solution);
+        }
+        else if (R==bestR && R>bestE)
+        {
+            best_solution=sb.routes;
+            bestR = best_solution.size();
+            bestE = getTotalRouteLength(best_solution);
+        }
+
+        if((bestR==sb.demands.size()) && (bestE<=(float)getTotalManhatten(sb)/target_))
+            break;
+
+        sb.resetSB();
+        n++;
+    }
+    sb.resetSB();
+    sb.routes = best_solution;
+    std::cout << "Took " << n << " cycles\n";
+}
+
 // From Simulated Annealing: Swap randomly two elements in a list
 int RandomSwap(std::vector<RouteID> &list){
     if (list.size() == 0){
@@ -534,7 +570,7 @@ int SimAnnealing(SB &sb,int M_, float alpha_, float target_){
 
     Hadlocks(sb);
     R = sb.getRouteSuccess();
-    E = sb.getTotalRouteLength();
+    E = getTotalRouteLength(sb.routes);
     sol = sb.routes;
 
     while(k<M){
@@ -547,7 +583,7 @@ int SimAnnealing(SB &sb,int M_, float alpha_, float target_){
         RandomSwap(sb.demands);
         Hadlocks(sb);
         R_new = sb.getRouteSuccess();
-        E_new = sb.getTotalRouteLength();
+        E_new = getTotalRouteLength(sb.routes);
 
         if(R_new>R){
             sol = sb.routes;
@@ -715,10 +751,10 @@ int main(int argc, char *argv[]){
      
      
     
-    int N;
-    float target;
-    float alpha;
-    int width;
+    int N=100;
+    float target=0.95;
+    float alpha=0.95;
+    int width=8;
     std::string sb_id;
     std::string output = "sb_out.txt";
     width = results["width"].as<int>();
@@ -738,8 +774,8 @@ int main(int argc, char *argv[]){
         demands[i].print();
         // std::cout << demands[i];
     }
-    
-    SimAnnealing(sb,N,alpha,target);
+    RandomHadlocks(sb,N,target);
+    //SimAnnealing(sb,N,alpha,target);
     if(sb.getRouteSuccess() == sb.demands.size()){
         std::cout << "\nSuccess!\n";
     }
@@ -747,7 +783,7 @@ int main(int argc, char *argv[]){
         std::cout << "\nRouting failed!\n";
     }
     std::cout << "Routed " << sb.getRouteSuccess() << "/" << sb.demands.size() << std::endl;
-    std::cout << "Total route length= " << sb.getTotalRouteLength() << std::endl;
+    std::cout << "Total route length= " << getTotalRouteLength(sb.routes) << std::endl;
     sb.exportData(output,sb_id);
     return 0;
 }
