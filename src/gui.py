@@ -13,7 +13,7 @@ def drawSB(sb):
     buffer = 50   # Size of white space around SB in window
     terminal_len = 20
     font_size = 6
-    win = GraphWin("Switchbox",window,window)
+    win = GraphWin(f"{width}x{width} Switch Box",window,window)
     win.setBackground('white')   
     
 
