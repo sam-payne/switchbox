@@ -5,70 +5,78 @@ import sys
 import itertools
 import copy
 import simulated_annealing
+from stats import getMaxRouteLength, getTotalManhatten, getTotalRouteLength
 from utils import startprogress, progress, endprogress, show_progressbar
 
-# def randomWalk(sb):
+# def RandomWalk(sb):
 #     route_iterations = 0
 #     all_routes = []
 #     route_done = False
-#     while route_done == False:
-#         print("Iteration: " + str(route_iterations))
-#         for demand in sb.demands:
+    
+#     for demand in sb.demands:        
+#         route = []
+#         curr_node = [0,0]
+#         new_node = [0,0]
+#         src = sb.getNode(demand[0])
+#         dest = sb.getNode(demand[1])
+#         first_node = src.getNodeFromTerminal().getID()
+#         last_node = dest.getNodeFromTerminal().getID()
+#         curr_node[0] = int(first_node[0])
+#         curr_node[1] = int(last_node[1])
+#         routeid = (src.getID(),dest.getID())
+#         route.append(demand[0])
+#         route.append(src)
+#         success = True
+#         while tuple(curr_node) != last_node:
+#             new_node = curr_node
+#             if (curr_node[0] == last_node[0]):
+#                 if last_node[1]>curr_node[1]:
+#                     new_node[1] = curr_node[1] + 1
+#                 else:
+#                     new_node[1] = curr_node[1] - 1
+#             elif (curr_node[1] == last_node[1]):
+#                 if last_node[0]>curr_node[0]:
+#                     new_node[0] = curr_node[0] + 1
+#                 else:
+#                     new_node[0] = curr_node[0] - 1
+#             else:       
+#                 choice = random.randint(0,1)
+#                 if choice==1:
+#                     if last_node[0]>curr_node[0]:
+#                         new_node[0] = curr_node[0] + 1
+#                     else:
+#                         new_node[0] = curr_node[0] - 1
+#                 else:
+#                     if last_node[1]>curr_node[1]:
+#                         new_node[1] = curr_node[1] + 1
+#                     else:
+#                         new_node[1] = curr_node[1] - 1
+                        
+#             if sb.checkTurn(tuple(curr_node),tuple(new_node),routeid):
+#                     curr_node = new_node
+#                     route.append(tuple(curr_node))
+#                     print(curr_node)
+#             else:
+#                 success = False
+#                 break
+#                 raise Exception("Routing failed")
+
+#         if success==True: 
+#             route.append(demand[-1])
+#             sb.addRoute(route)
+#             all_routes.append(route)
+    
+#     return len(all_routes)
         
-#             curr_route = []
-#             curr_node = [0,0]
-#             src = sb.getNode(demand[0]).getID()
-#             dest = sb.getNode(demand[1]).getID()
-#             curr_node[0] = src[0]
-#             curr_node[1] = src[1]
-#             curr_route.append(demand[0])
-#             curr_route.append(src)
-#             while tuple(curr_node) != dest:
-#                 if (curr_node[0] == dest[0]):
-#                     if dest[1]>curr_node[1]:
-#                         curr_node[1] = curr_node[1] + 1
-#                     else:
-#                         curr_node[1] = curr_node[1] - 1
-#                 elif (curr_node[1] == dest[1]):
-#                     if dest[0]>curr_node[0]:
-#                         curr_node[0] = curr_node[0] + 1
-#                     else:
-#                         curr_node[0] = curr_node[0] - 1
-#                 else:       
-#                     choice = random.randint(0,1)
-#                     if choice==1:
-#                         if dest[0]>curr_node[0]:
-#                             curr_node[0] = curr_node[0] + 1
-#                         else:
-#                             curr_node[0] = curr_node[0] - 1
-#                     else:
-#                         if dest[1]>curr_node[1]:
-#                             curr_node[1] = curr_node[1] + 1
-#                         else:
-#                             curr_node[1] = curr_node[1] - 1
-
-#                 curr_route.append(tuple(curr_node))  
-#             curr_route.append(demand[-1])
-#             route_iterations = route_iterations + 1
-            
-#             all_routes.append(curr_route)
-
-#         sb_trial = sb
-#         route_done = True    
-#         if not sb_trial.checkRoutes(all_routes):
-#             route_done = False
-
-#         if route_done == True:
-#             print("Routing done after " + str(route_iterations) + " iterations")
-#             for r in all_routes:
-#                 sb.addRoute(r)
+        
+        
                        
 #############################################
 # Implement hadlock algorithm on each demand in turn
 # Return number of successfully routed demands
 
 def SimAnnealing(sb):
-    simulated_annealing.SimAnnealingAlgo(sb)
+    return simulated_annealing.SimAnnealingAlgo(sb)
 
 def Hadlocks(sb):
     used_nodes = []
@@ -107,46 +115,41 @@ def Hadlocks(sb):
 
 def RandomHadlocks(sb):
     demands = sb.demands
+    target=0.1
     success_counter = 0
-    best_route = [(None,None)] # Remember the best performing solution so far
-    if len(demands)<6:
-        perms = list(itertools.permutations(demands))
-        random.shuffle(perms)
-    i = 0
-    while success_counter != len(demands):
+    best_route = [] # Remember the best performing solution so far
+    
+    i = 1
+    E = getTotalRouteLength(sb)
+    while success_counter != len(demands) or E>=getTotalManhatten(sb)/target:
         success_counter = 0
-        if len(demands)<6:
-            if i>len(perms)-1:
-                sb.resetSB()
-                sb.addRoutes(best_route)
-                break
+        
+        if i>= 500:
             sb.resetSB()
-            sb.demands = perms[i]
-            success_counter = Hadlocks(sb)
-            if success_counter>len(best_route):
-                best_route = sb.routes.copy()
-        else:
-            if i>= 60:
-                sb.resetSB()
-                sb.addRoutes(best_route)
-                break
-            sb.resetSB()
-            random.shuffle(sb.demands)
-            success_counter = Hadlocks(sb)
-            if success_counter>len(best_route):
-                best_route = sb.routes.copy()
+            if not best_route:
+                return 0
+            sb.addRoutes(best_route)
+            break
+        sb.resetSB()
+        random.shuffle(sb.demands)
+        success_counter = Hadlocks(sb)
+        if success_counter>len(best_route):
+            best_route = sb.routes.copy()
+
+        E = getTotalRouteLength(sb)
         i += 1
         if show_progressbar:    
             print(f"Failed after {i} attempt(s)")
-        
+      
     return success_counter
         
-    
         
 def HorizontalFirst(sb):
     route = []
+    success_counter = 0
     for demand in sb.demands:
         route = []
+        success = True
         curr_node = [0,0]
         src = sb.getNode(demand[0])
         dest = sb.getNode(demand[1])
@@ -179,6 +182,8 @@ def HorizontalFirst(sb):
             elif curr_node[1] > last_y:
                 target = (curr_node[0],curr_node[1]-1)
             else:
+                success = False
+                break
                 raise Exception("Routing failed")
                 
             #print("Target = " + str(target))
@@ -187,10 +192,44 @@ def HorizontalFirst(sb):
                     curr_node = target
                     route.append(tuple(target))
             else:
+                success = False
+                break
                 raise Exception("Routing failed")
-        route.append(dest.getID())
+        if success==True:
+            route.append(dest.getID())
         #print(route)
-        sb.addRoute(route)
+            sb.addRoute(route)
+            success_counter += 1
+        
+    return success_counter
 
+def RandomHorizontalFirst(sb):
+    demands = sb.demands
+    target=0.8
+    success_counter = 0
+    best_route = [] # Remember the best performing solution so far
+    i = 1
+    E = getTotalRouteLength(sb)
+    while success_counter != len(demands) or E>=getTotalManhatten(sb)/target:
+        success_counter = 0
+        if i>= 500:
+            break
+
+        sb.resetSB()
+        random.shuffle(sb.demands)
+        success_counter = HorizontalFirst(sb)
+        if success_counter>len(best_route):
+            best_route = sb.routes.copy()
+        E = getTotalRouteLength(sb)
+        i += 1
+    sb.resetSB()
     
+    if not best_route:
+        return 0
+    else:
+        sb.addRoutes(best_route)
+   
+
+    return success_counter
+        
         

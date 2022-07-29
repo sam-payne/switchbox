@@ -20,11 +20,13 @@ def RandomSwap(l):
 
 
 def SimAnnealingAlgo(sb):
+
     E = 0  # 'Energy' (length)
     R = 0  #  Number of successfuly routed
-    alpha = 0.9
+    alpha = 0.95
+    target = 0.8
     M = 500
-    k = 0
+    k = 1
     boltzmann = 0
     T = 100
     # Initial sequence and routing
@@ -34,14 +36,14 @@ def SimAnnealingAlgo(sb):
 
     while k<M:
 
-        if E==getTotalManhatten(sb) and R==len(sb.demands):
+        if E<=getTotalManhatten(sb)/target and R==len(sb.demands):
             break
 
-        if T<2:
+        if T<1:
             break
 
 
-        print(f"Iteration {k}, T={T}, E={E}, R={R}, exp(-deltaE/T)={boltzmann}")
+        # print(f"Iteration {k}, T={T}, E={E}, R={R}, exp(-deltaE/T)={boltzmann}")
         sb.resetSB()
         RandomSwap(sb.demands)
         R_new = routing.Hadlocks(sb)
@@ -76,6 +78,11 @@ def SimAnnealingAlgo(sb):
                     T = T*alpha
                     #k += 1
         k += 1       
-    
+    if R==len(sb.demands):
+        success =  True
+    else:
+        success = False
     sb.resetSB()
     sb.addRoutes(sol)
+    # print(str(k)+";",end='')
+    return success
