@@ -1,5 +1,6 @@
 from utils import *
 from switchbox import Switchbox
+from datetime import datetime
 
 def getTotalManhatten(sb):
     total = 0
@@ -29,8 +30,9 @@ def getMaxRouteLength(sb):
 def getRouteEfficiency(sb):
     report = "\n\n******** Routing Efficiency ********\n"
     report += "(The length of each route compared to its shortest possible path (Manhatten distance))\n\n"
+    max_length = [0,'']
     if not sb.routes:
-        return 1
+        return ''
     total_len = 0
     total_man = 0
     for r in sb.routes:
@@ -39,11 +41,15 @@ def getRouteEfficiency(sb):
         manhatten = manhat(r[1],r[-2])
         total_man = total_man + manhatten
         id = str(r[0]) + "<->" + str(r[-1])
+        if length>max_length[0]:
+            max_length[0] = length
+            max_length[1] = id
         percent = round(100*(manhatten/length),2)
         report += "For route " + id + ", length = " + str(length) + " compared to possible " + str(manhatten) + " (" + str(percent) + "%)\n"
     report += f"\nTotal length = {total_len}\n"    
+    report += f"\nLongest routed demand is {max_length[1]} equal to {max_length[0]}\n"
     overall_percent = round(100*total_man/total_len,2)
-    report += ("Overall Efficiency = " + str(overall_percent) + "%\n")
+    report += ("\nOverall Efficiency = " + str(overall_percent) + "%\n")
     report += "********************************\n\n"
     return report
 
@@ -63,7 +69,7 @@ def getRoutingSuccess(sb):
             fails += "Failed to route " + str(d[0]) + " <-> " + str(d[1]) + "\n"
 
     report += "\n" + fails
-    report += "\nRouted " + str(len(sb.routes)) + "/" + str(len(sb.demands)) + " (" + str(round(100*len(sb.routes)/len(sb.demands),2)) + "%)\n\n"
+    report += "Routed " + str(len(sb.routes)) + "/" + str(len(sb.demands)) + " (" + str(round(100*len(sb.routes)/len(sb.demands),2)) + "%)\n\n"
     if len(sb.routes) == len(sb.demands):
         report += "******** Routing successful! ********"
     else:
@@ -92,8 +98,17 @@ def getSBUtilisation(sb):
     return report
 
 def getFullReport(sb):
-    report = "******** Routing finished - full report... ********"
+    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    report = "******** Routing Report ********\n"
+    report += " .... " + now + " .... \n"
+    report += f" .... {sb.width}x{sb.width} Switch Box .... "
+    report += getRoutingSuccess(sb)
     report += getSBUtilisation(sb)
     report += getRouteEfficiency(sb)
-    report += getRoutingSuccess(sb)
+    
     return report
+
+def exportReport(sb):
+    f = open("sb_routing.rpt","w")
+    f.write(getFullReport(sb))
+    f.close()
