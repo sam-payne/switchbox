@@ -11,6 +11,9 @@
 #define TRUE 1
 #define FALSE 0
 
+#define MINSUM 1
+#define MINMAX 2
+
 // Represent a terminal node (ie. 'N3')
 struct Terminal{
     char dir;
@@ -296,6 +299,41 @@ int getTotalRouteLength(std::vector<Route> routes){
     return total;
 }
 
+int getMaxRouteLength(std::vector<Route> routes){
+    int max_len=0;
+    for (int i = 0; i < routes.size(); i++)
+    {
+        int curr_len = routes[i].nodes.size()-1;
+        if(curr_len > max_len) 
+            max_len = curr_len;
+    }
+    return max_len;
+}
+
+int getMaxManhattan(SB &sb){
+    int max_manhat = 0;
+    int curr_manhat = 0;
+    int diffx, diffy;
+    for (int i = 0; i < sb.demands.size(); i++)
+    {   
+        Node a = sb.getNodeFromTerminal(sb.demands[i].src);
+        Node b = sb.getNodeFromTerminal(sb.demands[i].dest);
+    
+        if(a.x > b.x)
+            diffx = a.x - b.x;
+        else
+            diffx = b.x - a.x;
+        if (a.y > b.y)
+            diffy = a.y - b.y;
+        else
+            diffy = b.y - a.y;
+        curr_manhat = (diffx + diffy);
+        if(curr_manhat > max_manhat)
+            max_manhat = curr_manhat;
+    }
+    return max_manhat;
+}
+
 // Calculates the sum of all the Manhatten distance between terminals,
 // giving the total length of the optimal solution
 int getTotalManhatten(SB &sb){
@@ -508,29 +546,45 @@ int Hadlocks(SB &sb){
         
 }
 
-int RandomHadlocks(SB &sb,int M_, float target_){
+int RandomHadlocks(SB &sb,int M_, float target_, int objective_){
     std::vector<Route> best_solution;
     int n=1,E=0,R=0,bestR=0,bestE=0;
+    int total_manhat = getTotalManhatten(sb);
+    int max_manhat = getMaxManhattan(sb);
     while(n<M_){
         //std::cout << "Iteration " << n;
         std::shuffle(sb.demands.begin(),sb.demands.end(), std::default_random_engine(0));
         Hadlocks(sb);    
         R = sb.getRouteSuccess();
-        E = getTotalRouteLength(sb.routes);
+
+        if(objective_ == MINSUM)
+            E = getTotalRouteLength(sb.routes);
+        else if(objective_ == MINMAX)
+            E = getMaxRouteLength(sb.routes); 
+        else
+            throw std::runtime_error("Invalid objective function"); 
+        
+
+        // break if the Manhattan optimal solution is found
+        if((R==sb.demands.size()) && (getTotalRouteLength(sb.routes)==total_manhat))
+            break;
                 
         if (R>bestR){
             best_solution=sb.routes;
             bestR = best_solution.size();
-            bestE = getTotalRouteLength(best_solution);
+            bestE = E; 
         }
-        else if (R==bestR && R>bestE)
+        else if (R==bestR && E<bestE)
         {
             best_solution=sb.routes;
             bestR = best_solution.size();
-            bestE = getTotalRouteLength(best_solution);
+            bestE = E;
         }
 
-        if((bestR==sb.demands.size()) && (bestE<=(float)getTotalManhatten(sb)/target_))
+        if((objective_ == MINSUM) && (R==sb.demands.size()) && (E<=(float)total_manhat/target_))
+            break;
+
+        if((objective_ == MINMAX) && (R==sb.demands.size()) && (E<=(float)max_manhat/target_))
             break;
 
         sb.resetSB();
@@ -557,7 +611,9 @@ int RandomSwap(std::vector<RouteID> &list){
 
 }
 
-int SimAnnealing(SB &sb,int M_, float alpha_, float target_){
+
+int SimAnnealing(SB &sb,int M_, float alpha_, float target_, int objective_){
+    
     std::vector<Route> sol;
     int E=0, E_new=0;
     int deltaE = 0;
@@ -570,20 +626,40 @@ int SimAnnealing(SB &sb,int M_, float alpha_, float target_){
 
     Hadlocks(sb);
     R = sb.getRouteSuccess();
-    E = getTotalRouteLength(sb.routes);
+    int total_manhat = getTotalManhatten(sb);
+    int max_manhat = getMaxManhattan(sb);
+
+    // std::cout << "Target value is " << (float)total_manhat/target_ << std::endl;
+    if(objective_ == MINSUM)
+        E = getTotalRouteLength(sb.routes);
+    else if(objective_ == MINMAX)
+        E = getMaxRouteLength(sb.routes); //Replace this
+    else
+        throw std::runtime_error("Invalid objective function"); 
+
     sol = sb.routes;
 
     while(k<M){
-        std::cout << "Iteration " << k << " T= " << T << " success= "<< R << " E= " << E << "\n";
-        if((R==sb.demands.size()) && (E<=(float)getTotalManhatten(sb)/target_))
+        // std::cout << "Iteration " << k << " T= " << T << " success= "<< R << " E= " << E << "\n";
+        if((R==sb.demands.size()) && (getTotalRouteLength(sb.routes)==(float)total_manhat))
             break;
+
+        if((objective_ == MINSUM) && (R==sb.demands.size()) && (E<=(float)total_manhat/target_))
+            break;
+
+        if((objective_ == MINMAX) && (R==sb.demands.size()) && (E<=(float)max_manhat/target_))
+            break;
+
        
-        if(T<2){break;}
+        if(T<1){break;}
         sb.resetSB();
         RandomSwap(sb.demands);
         Hadlocks(sb);
         R_new = sb.getRouteSuccess();
-        E_new = getTotalRouteLength(sb.routes);
+        if(objective_ == MINSUM)
+            E_new = getTotalRouteLength(sb.routes);
+        else
+            E_new = getMaxRouteLength(sb.routes);
 
         if(R_new>R){
             sol = sb.routes;
@@ -614,6 +690,8 @@ int SimAnnealing(SB &sb,int M_, float alpha_, float target_){
     }
     sb.resetSB();
     sb.routes = sol;
+    std::cout << "Took " << k << " cycles\n";
+
     if (sb.routes.size()==sb.demands.size()){
         return TRUE;
     }
@@ -722,6 +800,8 @@ int main(int argc, char *argv[]){
         ("d,demands","List of demands as string",cxxopts::value<std::vector<std::string>>())
         ("o,output","Output file path for routing results",cxxopts::value<std::string>()->default_value("sb_routes.txt"))
         ("i,id","Switchbox ID",cxxopts::value<std::string>()->default_value("0,0"))
+        ("r,algorithm","Choice of Algorithm",cxxopts::value<int>()->default_value("1"))
+        ("j,objective","Objective function (1-MINSUM, 2-MINMAX)",cxxopts::value<int>()->default_value("1"))
         ("h,help","Print usage");
     options.parse_positional({"demands"});
 
@@ -755,6 +835,9 @@ int main(int argc, char *argv[]){
     float target=0.95;
     float alpha=0.95;
     int width=8;
+    int algorithm=1;
+    bool print_demand=FALSE;
+    int objective = MINSUM;
     std::string sb_id;
     std::string output = "sb_out.txt";
     width = results["width"].as<int>();
@@ -763,6 +846,8 @@ int main(int argc, char *argv[]){
     if(results.count("alpha")){alpha = results["alpha"].as<float>();}
     if(results.count("output")){output = results["output"].as<std::string>();}
     if(results.count("id")){sb_id = results["id"].as<std::string>();}
+    if(results.count("algorithm")){algorithm = results["algorithm"].as<int>();}
+    if(results.count("objective")){objective = results["objective"].as<int>();}
     // std::vector<std::string> demands = results["demands"].as<std::vector<std::string>>();
     std::vector<RouteID> demands = parseDemands(results["demands"].as<std::vector<std::string>>());
     
@@ -774,8 +859,20 @@ int main(int argc, char *argv[]){
         demands[i].print();
         // std::cout << demands[i];
     }
-    RandomHadlocks(sb,N,target);
-    //SimAnnealing(sb,N,alpha,target);
+   
+    if(objective==MINSUM)std::cout << "\nObjective function: MINSUM";
+    if(objective==MINMAX)std::cout << "\nObjective function: MINMAX";
+    std::cout << "\nTarget: " << target << std::endl;
+
+    if(algorithm==1){std::cout << "\nAlgorithm In Use: Random Hadlocks\n";RandomHadlocks(sb,N,target,objective);} 
+    else if(algorithm==2){std::cout << "\nAlgorithm In Use: Hadlocks\n";Hadlocks(sb);}
+    else if(algorithm==3){std::cout << "\nAlgorithm In Use: Simulated Annealing\n";SimAnnealing(sb,N,alpha,target,objective);}
+    else{
+        std::cerr << "No algorithm specified\n";
+        return 1;}
+    
+    
+
     if(sb.getRouteSuccess() == sb.demands.size()){
         std::cout << "\nSuccess!\n";
     }
@@ -783,7 +880,8 @@ int main(int argc, char *argv[]){
         std::cout << "\nRouting failed!\n";
     }
     std::cout << "Routed " << sb.getRouteSuccess() << "/" << sb.demands.size() << std::endl;
-    std::cout << "Total route length= " << getTotalRouteLength(sb.routes) << std::endl;
+    std::cout << "Total route length= " << getTotalRouteLength(sb.routes) << " (Manhattan= " << getTotalManhatten(sb) << ")" << std::endl;
+    std::cout << "Maximum route length= " << getMaxRouteLength(sb.routes) << " (Max Manhattan= " << getMaxManhattan(sb) << ")" << std::endl;
     sb.exportData(output,sb_id);
     return 0;
 }
