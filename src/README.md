@@ -30,3 +30,22 @@ Functions to run single or batch tests, and also to randomly generate demands fo
 
 ### utils.py ###
 Various other functions used within the environment.
+
+---
+
+## Usage ##
+
+To run a single switch box routing test for a given width and number of demands, use the 'routeTestSingle' function. This returns a switch box object, which can be passed to the drawSB(sb) function to generate a graphic, or getFullReport(sb) to return a string of the statistics report.
+Example:
+- `sb = routeTestSingle(width=8,routing_method='RandomHadlocks',routeback=True,common_nets=False,number_demands=8,corners=True)`
+- `drawSB(sb)`
+- `print(getFullReport(sb))`
+
+To run a batch test, which runs multiple iterations of routing trials for increasing numbers of demands, use routeTestBatch():
+- `routeTestBatch(16,"SimulatedAnnealing",routeback=True,common_nets=False,max_demands=28,iterations=15,corners=True)`
+
+Or, you can route your own specified demands manually, defined in a file called "demands.txt" (see example file):
+- `demands = parseDemands("demands.txt")`
+- `sb = Switchbox(10,demands)`    *Create a switchbox object with a width of 10, and demands from the file*
+- `RandomHadlocks(sb)`      *Pass switch box object to routing function*
+- `drawSB(sb)`
